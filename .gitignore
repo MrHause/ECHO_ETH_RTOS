@@ -1,0 +1,26 @@
+.metadata
+CM4/Debug
+CM4/.settings
+CM7/.settings
+CM7/Debug
+CM4/*.launch
+CM7*.launch 
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
+
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+# PDT-specific (PHP Development Tools)
+.buildpath
+
+# sbteclipse plugin
+.target
