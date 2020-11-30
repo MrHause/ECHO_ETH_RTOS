@@ -38,6 +38,8 @@
 /* USER CODE BEGIN PD */
 
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
+#define HSEM_ID_8 (8U)
+#define HSEM_ID_9 (9U)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -96,26 +98,26 @@ int main(void)
 
   /* Configure the system clock */
   SystemClock_Config();
-/* USER CODE BEGIN Boot_Mode_Sequence_2 */
-/* When system initialization is finished, Cortex-M7 will release Cortex-M4 by means of
-HSEM notification */
-/*HW semaphore Clock enable*/
-__HAL_RCC_HSEM_CLK_ENABLE();
-/*Take HSEM */
-HAL_HSEM_FastTake(HSEM_ID_0);
-/*Release HSEM in order to notify the CPU2(CM4)*/
-HAL_HSEM_Release(HSEM_ID_0,0);
-/* wait until CPU2 wakes up from stop mode */
-timeout = 0xFFFF;
-while((__HAL_RCC_GET_FLAG(RCC_FLAG_D2CKRDY) == RESET) && (timeout-- > 0));
-if ( timeout < 0 )
-{
-Error_Handler();
-}
+	/* USER CODE BEGIN Boot_Mode_Sequence_2 */
+	/* When system initialization is finished, Cortex-M7 will release Cortex-M4 by means of
+	 HSEM notification */
+	/*HW semaphore Clock enable*/
+	__HAL_RCC_HSEM_CLK_ENABLE();
+	/*Take HSEM */
+	HAL_HSEM_FastTake(HSEM_ID_0);
+	/*Release HSEM in order to notify the CPU2(CM4)*/
+	HAL_HSEM_Release(HSEM_ID_0, 0);
+	/* wait until CPU2 wakes up from stop mode */
+	timeout = 0xFFFF;
+	while ((__HAL_RCC_GET_FLAG(RCC_FLAG_D2CKRDY) == RESET) && (timeout-- > 0))
+		;
+	if (timeout < 0) {
+		Error_Handler();
+	}
 /* USER CODE END Boot_Mode_Sequence_2 */
 
   /* USER CODE BEGIN SysInit */
-
+	HAL_HSEM_ActivateNotification(__HAL_HSEM_SEMID_TO_MASK(HSEM_ID_8));
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -123,6 +125,13 @@ Error_Handler();
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
+  HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+
+  HAL_NVIC_SetPriority(CM4_SEV_IRQn, 0x0F, 0);
+  HAL_NVIC_EnableIRQ(CM4_SEV_IRQn);
+  HAL_NVIC_SetPriority(HSEM1_IRQn, 0x0F, 0);
+  HAL_NVIC_EnableIRQ(HSEM1_IRQn);
+
   struct MC_FRAME *package;
   /* USER CODE END 2 */
 
@@ -131,9 +140,14 @@ Error_Handler();
   while (1)
   {
     /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
-	  memcpy(package, CM4_to_CM7, sizeof(package)+CM4_to_CM7->dataLen);
-	  HAL_Delay(500);
+
+	  //memcpy(package, CM4_to_CM7, sizeof(package)+CM4_to_CM7->dataLen);
+	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	  //HAL_NVIC_SetPendingIRQ(CM7_SEV_IRQn);
+	  //HAL_NVIC_SetPendingIRQ(CM4_SEV_IRQn);
+	  HAL_Delay(1000);
   }
   /* USER CODE END 3 */
 }
@@ -216,29 +230,17 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_HSEM_FreeCallback(uint32_t SemMask)
+{
+
+	if((SemMask &  __HAL_HSEM_SEMID_TO_MASK(HSEM_ID_8))!= 0){
+		HAL_HSEM_ActivateNotification(__HAL_HSEM_SEMID_TO_MASK(HSEM_ID_8));
+		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+	}
+
+}
 
 /* USER CODE END 4 */
-
-/**
-  * @brief  Period elapsed callback in non blocking mode
-  * @note   This function is called  when TIM2 interrupt took place, inside
-  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
-  * a global variable "uwTick" used as application time base.
-  * @param  htim : TIM handle
-  * @retval None
-  */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  /* USER CODE BEGIN Callback 0 */
-
-  /* USER CODE END Callback 0 */
-  if (htim->Instance == TIM2) {
-    HAL_IncTick();
-  }
-  /* USER CODE BEGIN Callback 1 */
-
-  /* USER CODE END Callback 1 */
-}
 
 /**
   * @brief  This function is executed in case of error occurrence.

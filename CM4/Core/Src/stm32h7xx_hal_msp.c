@@ -71,6 +71,11 @@ void HAL_MspInit(void)
 
   /* System interrupt init*/
 
+  /* Peripheral interrupt init */
+  /* CM7_SEV_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(CM7_SEV_IRQn, 6, 0);
+  HAL_NVIC_EnableIRQ(CM7_SEV_IRQn);
+
   /* USER CODE BEGIN MspInit 1 */
 
   /* USER CODE END MspInit 1 */
