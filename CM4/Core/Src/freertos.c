@@ -219,9 +219,11 @@ void sending_init(void){
 void sender_task(void *arg){
 	MC_FRAME packet;
 	while(1){
-		//HAL_HSEM_FastTake(HSEM_SEND);
-		//HAL_HSEM_Release(HSEM_SEND, 0);
-		SendPacket(packet);
+		//SendPacket(packet);
+		uint8_t buff[20];
+		sprintf(buff, "hello CM4\n");
+
+		mc_send(Stat1, Command3, buff, strlen(buff));
 
 		vTaskDelay(2000/portTICK_PERIOD_MS);
 	}

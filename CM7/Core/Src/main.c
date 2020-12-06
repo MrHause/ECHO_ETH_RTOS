@@ -26,6 +26,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
+#include <string.h>
 #include "multicorecomm.h"
 /* USER CODE END Includes */
 
@@ -40,6 +42,8 @@
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
 #define HSEM_ID_8 (8U)
 #define HSEM_SEND (9U)
+
+uint8_t new_msg_flag = 0;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -132,7 +136,7 @@ int main(void)
   HAL_NVIC_SetPriority(HSEM1_IRQn, 0x0F, 0);
   HAL_NVIC_EnableIRQ(HSEM1_IRQn);
 
-  struct MC_FRAME *package;
+  struct MC_FRAME package;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -146,6 +150,13 @@ int main(void)
 	  //memcpy(package, CM4_to_CM7, sizeof(package)+CM4_to_CM7->dataLen);
 	  HAL_HSEM_FastTake(HSEM_SEND);
 	  HAL_HSEM_Release(HSEM_SEND, 0);
+
+
+	  if(new_msg_flag){
+		  memcpy( &package, CM4_to_CM7, sizeof(package) );
+		  new_msg_flag = 0;
+	  }
+
 	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 	  //HAL_NVIC_SetPendingIRQ(CM7_SEV_IRQn);
 	  //HAL_NVIC_SetPendingIRQ(CM4_SEV_IRQn);
@@ -238,6 +249,8 @@ void HAL_HSEM_FreeCallback(uint32_t SemMask)
 	if((SemMask &  __HAL_HSEM_SEMID_TO_MASK(HSEM_ID_8))!= 0){
 		HAL_HSEM_ActivateNotification(__HAL_HSEM_SEMID_TO_MASK(HSEM_ID_8));
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+		if( new_msg_flag == 0)
+			new_msg_flag = 1;
 	}
 
 }

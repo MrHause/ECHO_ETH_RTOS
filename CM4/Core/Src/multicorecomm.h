@@ -49,6 +49,7 @@ extern volatile MC_FRAME* CM7_to_CM4;
 
 
 int MC_Init();
+mc_error_t mc_send(MC_Status stat, MC_Commands comm, uint8_t *buff, uint16_t buff_len );
 mc_error_t SendPacket(MC_FRAME packet);
 void multicore_task(void const * argument);
 

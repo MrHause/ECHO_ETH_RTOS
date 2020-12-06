@@ -23,7 +23,8 @@ SemaphoreHandle_t new_msg_sem;
 
 TaskHandle_t mc_task_handle = NULL;
 
-
+MC_FRAME mc_frame_prepare( MC_Status stat, MC_Commands comm, uint8_t *buff, uint16_t buff_len );
+static void mc_send_notification();
 
 int MC_Init(){
 	//create task
@@ -73,6 +74,32 @@ mc_error_t SendPacket(MC_FRAME packet){
 	HAL_HSEM_Release(HSEM_SEND, 0);
 
 	return MC_OK;
+}
+
+mc_error_t mc_send(MC_Status stat, MC_Commands comm, uint8_t *buff, uint16_t buff_len){
+	MC_FRAME packet;
+	packet = mc_frame_prepare(stat, comm, buff, buff_len); //prepare frame
+
+	memcpy(CM4_to_CM7, &packet, sizeof(packet)+packet.dataLen);	//copy frame to shared memory
+
+	mc_send_notification();
+
+	return MC_OK;
+}
+
+MC_FRAME mc_frame_prepare( MC_Status stat, MC_Commands comm, uint8_t *buff, uint16_t buff_len ){
+	MC_FRAME mc_frame;
+
+	mc_frame.status = stat;
+	mc_frame.command = comm;
+	mc_frame.dataLen = buff_len;
+	memcpy(mc_frame.data, buff, buff_len);
+
+	return mc_frame;
+}
+static void mc_send_notification(){
+	HAL_HSEM_FastTake(HSEM_SEND);
+	HAL_HSEM_Release(HSEM_SEND, 0);
 }
 
 mc_error_t SendReceivePacket(MC_FRAME packet, MC_FRAME *packet_receive){
