@@ -40,7 +40,7 @@
 /* USER CODE BEGIN PD */
 
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
-#define HSEM_ID_8 (8U)
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -51,9 +51,8 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-TaskHandle_t mc_task_handle = NULL;
+
 TaskHandle_t send_task_handler = NULL;
-void multicore_task(void const * argument);
 void sender_task(void const *arg);
 /* USER CODE END PV */
 
@@ -109,11 +108,12 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-  HAL_NVIC_SetPriority(CM7_SEV_IRQn, 15, 0);
-  HAL_NVIC_EnableIRQ(CM7_SEV_IRQn);
-  xTaskCreate(multicore_task, "mcTask", 512, NULL, osPriorityNormal, &mc_task_handle);
-  xTaskCreate(sender_task, "sendTask", 512, NULL, osPriorityAboveNormal, &send_task_handler);
+  //HAL_NVIC_SetPriority(CM7_SEV_IRQn, 15, 0);
+  //HAL_NVIC_EnableIRQ(CM7_SEV_IRQn);
 
+  //MC_Init();
+  HAL_NVIC_SetPriority(HSEM2_IRQn, 6, 0);
+  HAL_NVIC_EnableIRQ(HSEM2_IRQn);
   //osThreadDef(mcTask, multicore_task, osPriorityNormal, 0, 512);
  // mc_task_handle = osThreadCreate(osThread(defaultTask), NULL);
   /* USER CODE END 2 */
@@ -136,32 +136,7 @@ int main(void)
 }
 
 /* USER CODE BEGIN 4 */
-multicore_task(void const * argument){
-	MC_FRAME packet;
-	uint8_t buff[20];
-	while(1){
-		memset(&packet, 0, sizeof(packet));
-		sprintf(buff, "hello\n");
-		packet.status = Stat2;
-		packet.command = Command2;
-		packet.dataLen = sizeof(buff);
-		memcpy(packet.data, buff, strlen(buff));
-		memcpy(CM4_to_CM7, &packet, sizeof(packet)+packet.dataLen);
 
-		HAL_HSEM_FastTake(HSEM_ID_8);
-		HAL_HSEM_Release(HSEM_ID_8, 0);
-
-		HAL_NVIC_SetPendingIRQ(CM4_SEV_IRQn);
-		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-		vTaskDelay(2000 / portTICK_PERIOD_MS);
-	}
-}
-
-void sender_task(void const *arg){
-	while(1){
-		vTaskDelay(2000/portTICK_PERIOD_MS);
-	}
-}
 /* USER CODE END 4 */
 
 /**

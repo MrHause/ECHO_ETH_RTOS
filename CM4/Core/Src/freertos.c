@@ -29,6 +29,7 @@
 #include "lwip/opt.h"
 #include "lwip/sys.h"
 #include "lwip/api.h"
+#include "multicorecomm.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,6 +57,8 @@ osThreadId defaultTaskHandle;
 /* USER CODE BEGIN FunctionPrototypes */
 static void tcpecho_thread(void *arg);
 void tcpecho_init(void);
+void sending_init(void);
+void sender_task(void *arg);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void const * argument);
@@ -128,7 +131,11 @@ void StartDefaultTask(void const * argument)
   /* init code for LWIP */
   MX_LWIP_Init();
   /* USER CODE BEGIN StartDefaultTask */
-  tcpecho_init();
+  //tcpecho_init();
+  //mc_init_task();
+  sending_init();
+  MC_Init();
+
   /* Infinite loop */
   for(;;)
   {
@@ -188,6 +195,7 @@ static void tcpecho_thread(void *arg)
           netconn_close(newconn);
           netconn_delete(newconn);
         }
+        vTaskDelay(2);
       }
     }
     else
@@ -196,11 +204,27 @@ static void tcpecho_thread(void *arg)
     }
   }
 }
+
+
 /*-----------------------------------------------------------------------------------*/
 
 void tcpecho_init(void)
 {
   sys_thread_new("tcpecho_thread", tcpecho_thread, NULL, DEFAULT_THREAD_STACKSIZE, TCPECHO_THREAD_PRIO);
+}
+void sending_init(void){
+	sys_thread_new("sending_thread", sender_task, NULL, 512, tskIDLE_PRIORITY + 4);
+}
+
+void sender_task(void *arg){
+	MC_FRAME packet;
+	while(1){
+		//HAL_HSEM_FastTake(HSEM_SEND);
+		//HAL_HSEM_Release(HSEM_SEND, 0);
+		SendPacket(packet);
+
+		vTaskDelay(2000/portTICK_PERIOD_MS);
+	}
 }
 /* USER CODE END Application */
 

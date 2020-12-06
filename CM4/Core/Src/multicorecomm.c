@@ -1,0 +1,125 @@
+/*
+ * multicorecomm.c
+ *
+ *  Created on: Nov 30, 2020
+ *      Author: mrhause
+ */
+#include "FreeRTOS.h"
+#include "task.h"
+#include "main.h"
+#include "cmsis_os.h"
+#include "semphr.h"
+#include "gpio.h"
+#include "multicorecomm.h"
+//#include "FreeRTOS.h"
+//#include "task.h"
+
+
+
+volatile MC_FRAME* CM4_to_CM7 = (MC_FRAME*)CM4_to_CM7_ADDR;
+volatile MC_FRAME* CM7_to_CM4 = (MC_FRAME*)CM7_to_CM4_ADDR;
+
+SemaphoreHandle_t new_msg_sem;
+
+TaskHandle_t mc_task_handle = NULL;
+
+
+
+int MC_Init(){
+	//create task
+	//if(xTaskCreate(multicore_task, "mcTask", 512, NULL, tskIDLE_PRIORITY+4, &mc_task_handle) != pdPASS )
+	//	return -1;
+
+	sys_thread_new("mc_thread", multicore_task, NULL, 512, tskIDLE_PRIORITY + 4);
+
+	//create binary semaphore
+	new_msg_sem = xSemaphoreCreateBinary();
+	if(new_msg_sem == NULL)
+		return -2;
+
+	//enable notification for incomming answers from CM7
+	HAL_HSEM_ActivateNotification(__HAL_HSEM_SEMID_TO_MASK(HSEM_RECEIVE));
+
+	return 0;
+}
+
+void multicore_task(void const * argument){
+	MC_FRAME packet;
+	uint8_t buff[20];
+	MC_Init();
+	while(1){
+		//wait for semaphore
+
+		//HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+		if(xSemaphoreTake(new_msg_sem, 500) == pdTRUE){
+			HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+		}
+		vTaskDelay(1 / portTICK_PERIOD_MS);
+	}
+}
+
+mc_error_t SendPacket(MC_FRAME packet){
+	uint8_t buff[20];
+
+	memset(&packet, 0, sizeof(packet));
+	sprintf(buff, "hello CM4\n");
+	packet.status = Stat2;
+	packet.command = Command2;
+	packet.dataLen = sizeof(buff);
+	memcpy(packet.data, buff, strlen(buff));
+	memcpy(CM4_to_CM7, &packet, sizeof(packet)+packet.dataLen);
+
+	HAL_HSEM_FastTake(HSEM_SEND);
+	HAL_HSEM_Release(HSEM_SEND, 0);
+
+	return MC_OK;
+}
+
+mc_error_t SendReceivePacket(MC_FRAME packet, MC_FRAME *packet_receive){
+	//send
+
+	//wait for answer from queue
+	return MC_OK;
+}
+
+void HAL_HSEM_FreeCallback(uint32_t SemMask)
+{
+
+	if((SemMask &  __HAL_HSEM_SEMID_TO_MASK(HSEM_RECEIVE))!= 0){
+		HAL_HSEM_ActivateNotification(__HAL_HSEM_SEMID_TO_MASK(HSEM_RECEIVE));
+		//give semaphore to mc task
+
+		//xsemaphoregivefromisr !!!!
+		//!!!!!!!!!!!!!!!!!!!!!!!!!!
+		//xSemaphoreGive(new_msg_sem);
+		//static unsigned char ucLocalTickCount = 0;
+		static BaseType_t xHigherPriorityTaskWoken;
+
+		/* A timer tick has occurred. */
+
+		/* Is it time for vATask() to run? */
+		xHigherPriorityTaskWoken = pdFALSE;
+
+		/* Unblock the task by releasing the semaphore. */
+		xSemaphoreGiveFromISR(new_msg_sem, &xHigherPriorityTaskWoken);
+
+		/* If xHigherPriorityTaskWoken was set to true you
+		 we should yield.  The actual macro used here is
+		 port specific. */
+		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+	}
+
+}
+/*
+void HAL_HSEM_FreeCallback(uint32_t SemMask)
+{
+
+	if((SemMask &  __HAL_HSEM_SEMID_TO_MASK(HSEM_RECEIVE))!= 0){
+		HAL_HSEM_ActivateNotification(__HAL_HSEM_SEMID_TO_MASK(HSEM_RECEIVE));
+		//give semaphore to mc task
+		xSemaphoreGive(new_msg_sem);
+	}
+
+}
+*/
+

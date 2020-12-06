@@ -39,7 +39,7 @@
 
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
 #define HSEM_ID_8 (8U)
-#define HSEM_ID_9 (9U)
+#define HSEM_SEND (9U)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -98,7 +98,7 @@ int main(void)
 
   /* Configure the system clock */
   SystemClock_Config();
-	/* USER CODE BEGIN Boot_Mode_Sequence_2 */
+/* USER CODE BEGIN Boot_Mode_Sequence_2 */
 	/* When system initialization is finished, Cortex-M7 will release Cortex-M4 by means of
 	 HSEM notification */
 	/*HW semaphore Clock enable*/
@@ -144,6 +144,8 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
 	  //memcpy(package, CM4_to_CM7, sizeof(package)+CM4_to_CM7->dataLen);
+	  HAL_HSEM_FastTake(HSEM_SEND);
+	  HAL_HSEM_Release(HSEM_SEND, 0);
 	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 	  //HAL_NVIC_SetPendingIRQ(CM7_SEV_IRQn);
 	  //HAL_NVIC_SetPendingIRQ(CM4_SEV_IRQn);
@@ -241,6 +243,27 @@ void HAL_HSEM_FreeCallback(uint32_t SemMask)
 }
 
 /* USER CODE END 4 */
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM2 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM2) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
