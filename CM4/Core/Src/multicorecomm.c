@@ -9,8 +9,10 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "semphr.h"
+#include "queue.h"
 #include "gpio.h"
 #include "multicorecomm.h"
+#include <string.h>
 //#include "FreeRTOS.h"
 //#include "task.h"
 
@@ -20,6 +22,8 @@ volatile MC_FRAME* CM4_to_CM7 = (MC_FRAME*)CM4_to_CM7_ADDR;
 volatile MC_FRAME* CM7_to_CM4 = (MC_FRAME*)CM7_to_CM4_ADDR;
 
 SemaphoreHandle_t new_msg_sem;
+
+QueueHandle_t mc_queue;
 
 TaskHandle_t mc_task_handle = NULL;
 
@@ -38,6 +42,12 @@ int MC_Init(){
 	if(new_msg_sem == NULL)
 		return -2;
 
+	mc_queue = xQueueCreate(2, sizeof(MC_FRAME));
+	if(mc_queue == NULL)
+		return -3;
+
+
+
 	//enable notification for incomming answers from CM7
 	HAL_HSEM_ActivateNotification(__HAL_HSEM_SEMID_TO_MASK(HSEM_RECEIVE));
 
@@ -45,7 +55,7 @@ int MC_Init(){
 }
 
 void multicore_task(void const * argument){
-	MC_FRAME packet;
+	MC_FRAME package;
 	uint8_t buff[20];
 	MC_Init();
 	while(1){
@@ -54,6 +64,9 @@ void multicore_task(void const * argument){
 		//HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 		if(xSemaphoreTake(new_msg_sem, 500) == pdTRUE){
 			HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+
+			memcpy( &package, CM7_to_CM4, sizeof(package) ); //copy answer from CM7
+			xQueueSend(mc_queue, (void *)&package, (TickType_t)20);
 		}
 		vTaskDelay(1 / portTICK_PERIOD_MS);
 	}
@@ -102,11 +115,19 @@ static void mc_send_notification(){
 	HAL_HSEM_Release(HSEM_SEND, 0);
 }
 
-mc_error_t SendReceivePacket(MC_FRAME packet, MC_FRAME *packet_receive){
+mc_error_t mc_SendReceive(MC_FRAME *response, MC_Status stat, MC_Commands comm, uint8_t *buff, uint16_t buff_len){
 	//send
+	MC_FRAME packet;
+	packet = mc_frame_prepare(stat, comm, buff, buff_len); //prepare frame
 
-	//wait for answer from queue
-	return MC_OK;
+	memcpy(CM4_to_CM7, &packet, sizeof(packet)+packet.dataLen);	//copy frame to shared memory
+
+	mc_send_notification(); //send interrupt to second core
+
+	if( xQueueReceive(mc_queue, response, 500/portTICK_PERIOD_MS ) ){ //wait for response
+		return MC_OK;
+	}else
+		return MC_TIMEOUT;
 }
 
 void HAL_HSEM_FreeCallback(uint32_t SemMask)
