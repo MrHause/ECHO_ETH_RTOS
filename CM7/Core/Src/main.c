@@ -44,7 +44,6 @@
 #define HSEM_ID_8 (8U)
 #define HSEM_SEND (9U)
 
-uint8_t new_msg_flag = 0;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -137,7 +136,7 @@ int main(void)
   HAL_NVIC_SetPriority(HSEM1_IRQn, 0x0F, 0);
   HAL_NVIC_EnableIRQ(HSEM1_IRQn);
 
-  //HAL_HSEM_FastTake(HSEM_NEW_MSG); //take sem and wait for release it in the interrupt callback
+  HAL_HSEM_FastTake(HSEM_NEW_MSG); //take sem and wait for release it in the interrupt callback
 
   struct MC_FRAME package;
   struct MC_FRAME response;
@@ -150,19 +149,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-	  //memcpy(package, CM4_to_CM7, sizeof(package)+CM4_to_CM7->dataLen);
-
-	  //HAL_HSEM_FastTake(HSEM_SEND);
-	  //HAL_HSEM_Release(HSEM_SEND, 0);
-	  /*
-	  if(new_msg_flag){
-		  memcpy( &package, CM4_to_CM7, sizeof(package) );
-		  new_msg_flag = 0;
-	  }
-	  */
-	  //if( HAL_HSEM_FastTake(HSEM_NEW_MSG) == HAL_OK ){
-	  if(new_msg_flag){
+	  if( HAL_HSEM_FastTake(HSEM_NEW_MSG) == HAL_OK ){
 		  uint8_t buff[20];
 		  memcpy( &package, CM4_to_CM7, sizeof(package) );
 
@@ -175,7 +162,6 @@ int main(void)
 		  memcpy( CM7_to_CM4, &response, sizeof(response) );
 		  HAL_HSEM_FastTake(HSEM_SEND);
 		  HAL_HSEM_Release(HSEM_SEND, 0);
-		  new_msg_flag = 0;
 	  }
 
 	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
@@ -268,9 +254,7 @@ void HAL_HSEM_FreeCallback(uint32_t SemMask)
 	if((SemMask &  __HAL_HSEM_SEMID_TO_MASK(HSEM_ID_8))!= 0){
 		HAL_HSEM_ActivateNotification(__HAL_HSEM_SEMID_TO_MASK(HSEM_ID_8));
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
-		//HAL_HSEM_Release(HSEM_NEW_MSG, 0);
-		if( new_msg_flag == 0)
-			new_msg_flag = 1;
+		HAL_HSEM_Release(HSEM_NEW_MSG, 0);
 	}
 
 }
