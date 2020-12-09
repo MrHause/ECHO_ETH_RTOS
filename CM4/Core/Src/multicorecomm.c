@@ -35,8 +35,6 @@ int MC_Init(){
 	//if(xTaskCreate(multicore_task, "mcTask", 512, NULL, tskIDLE_PRIORITY+4, &mc_task_handle) != pdPASS )
 	//	return -1;
 
-	sys_thread_new("mc_thread", multicore_task, NULL, 512, tskIDLE_PRIORITY + 4);
-
 	//create binary semaphore
 	new_msg_sem = xSemaphoreCreateBinary();
 	if(new_msg_sem == NULL)
@@ -46,6 +44,7 @@ int MC_Init(){
 	if(mc_queue == NULL)
 		return -3;
 
+	sys_thread_new("mc_thread", multicore_task, NULL, 512, tskIDLE_PRIORITY + 4);
 
 
 	//enable notification for incomming answers from CM7
@@ -57,7 +56,7 @@ int MC_Init(){
 void multicore_task(void const * argument){
 	MC_FRAME package;
 	uint8_t buff[20];
-	MC_Init();
+	//MC_Init();
 	while(1){
 		//wait for semaphore
 
@@ -123,8 +122,7 @@ mc_error_t mc_SendReceive(MC_FRAME *response, MC_Status stat, MC_Commands comm, 
 	memcpy(CM4_to_CM7, &packet, sizeof(packet)+packet.dataLen);	//copy frame to shared memory
 
 	mc_send_notification(); //send interrupt to second core
-
-	if( xQueueReceive(mc_queue, response, 500/portTICK_PERIOD_MS ) ){ //wait for response
+	if( xQueueReceive(mc_queue, response, 5000/portTICK_PERIOD_MS ) == pdPASS ){
 		return MC_OK;
 	}else
 		return MC_TIMEOUT;

@@ -133,8 +133,9 @@ void StartDefaultTask(void const * argument)
   /* USER CODE BEGIN StartDefaultTask */
   //tcpecho_init();
   //mc_init_task();
-  sending_init();
+
   MC_Init();
+  sending_init();
 
   /* Infinite loop */
   for(;;)

@@ -173,8 +173,8 @@ int main(void)
 		  response.dataLen = strlen(buff);
 
 		  memcpy( CM7_to_CM4, &response, sizeof(response) );
-		  //HAL_HSEM_FastTake(HSEM_SEND);
-		  //HAL_HSEM_Release(HSEM_SEND, 0);
+		  HAL_HSEM_FastTake(HSEM_SEND);
+		  HAL_HSEM_Release(HSEM_SEND, 0);
 		  new_msg_flag = 0;
 	  }
 

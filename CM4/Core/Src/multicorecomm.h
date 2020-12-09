@@ -10,7 +10,7 @@
 
 #define MC_DATA_SIZE 32
 #define CM4_to_CM7_ADDR 0x30040000
-#define CM7_to_CM4_ADDR 0x30080000
+#define CM7_to_CM4_ADDR 0x30040400
 
 #define HSEM_SEND (8U)
 #define HSEM_RECEIVE (9U)
