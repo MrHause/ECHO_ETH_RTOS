@@ -44,6 +44,7 @@
 #define HSEM_ID_8 (8U)
 #define HSEM_SEND (9U)
 
+uint8_t SEM_NEW_MSG = 0;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -59,6 +60,7 @@
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+MC_Status command_execute(MC_Commands command);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -138,8 +140,8 @@ int main(void)
 
   HAL_HSEM_FastTake(HSEM_NEW_MSG); //take sem and wait for release it in the interrupt callback
 
-  struct MC_FRAME package;
-  struct MC_FRAME response;
+  MC_FRAME package;
+  MC_FRAME response;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -149,23 +151,28 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  if( HAL_HSEM_FastTake(HSEM_NEW_MSG) == HAL_OK ){
+	  //if( HAL_HSEM_FastTake(HSEM_NEW_MSG) == HAL_OK ){
+	  if( SEM_NEW_MSG ){
 		  uint8_t buff[20];
 		  memcpy( &package, CM4_to_CM7, sizeof(package) );
+		  MC_Status stat;
+		  stat = command_execute(package.command);
 
-		  response.status = Stat2;
-		  response.command = Command2;
+		  response.status = stat;
+		  response.command = package.command;
 		  sprintf(buff, "CM7 says Hi\n");
 		  memcpy(response.data, buff, strlen(buff));
 		  response.dataLen = strlen(buff);
-
 		  memcpy( CM7_to_CM4, &response, sizeof(response) );
+
 		  HAL_HSEM_FastTake(HSEM_SEND);
 		  HAL_HSEM_Release(HSEM_SEND, 0);
+
+		  SEM_NEW_MSG = 0;
 	  }
 
-	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-	  HAL_Delay(1000);
+	  //HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	  //HAL_Delay(1000);
   }
   /* USER CODE END 3 */
 }
@@ -254,9 +261,24 @@ void HAL_HSEM_FreeCallback(uint32_t SemMask)
 	if((SemMask &  __HAL_HSEM_SEMID_TO_MASK(HSEM_ID_8))!= 0){
 		HAL_HSEM_ActivateNotification(__HAL_HSEM_SEMID_TO_MASK(HSEM_ID_8));
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
-		HAL_HSEM_Release(HSEM_NEW_MSG, 0);
+		//HAL_HSEM_Release(HSEM_NEW_MSG, 0);
+		if( !SEM_NEW_MSG )
+			SEM_NEW_MSG = 1;
 	}
 
+}
+MC_Status command_execute(MC_Commands command){
+
+	if( command == LED2_ON )
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 1);
+	else if( command == LED2_OFF )
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 0);
+	else if( command == LED2_TOG)
+		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	else
+		return STAT_NOK;
+
+	return STAT_OK;
 }
 
 /* USER CODE END 4 */

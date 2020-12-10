@@ -16,15 +16,16 @@
 #define HSEM_RECEIVE (9U)
 
 typedef enum{
-	Command1,
-	Command2,
-	Command3
+	LED2_ON,
+	LED2_OFF,
+	LED2_TOG,
+	COMMAND_UNKNOWN
 }MC_Commands;
 
 typedef enum{
-	Stat1,
-	Stat2,
-	Stat3
+	STAT_OK,
+	STAT_NOK,
+	STAT_TIMEOUT
 }MC_Status;
 
 typedef struct{
@@ -48,10 +49,17 @@ extern volatile MC_FRAME* CM7_to_CM4;
 //volatile uint8_t* CM4_to_CM7_buff = (uint8_t *)CM4_to_CM7_ADDR;
 
 
-int MC_Init();
+int mc_init();
 mc_error_t mc_send(MC_Status stat, MC_Commands comm, uint8_t *buff, uint16_t buff_len );
 mc_error_t mc_SendReceive(MC_FRAME *response, MC_Status stat, MC_Commands comm, uint8_t *buff, uint16_t buff_len);
-mc_error_t SendPacket(MC_FRAME packet);
+mc_error_t mc_sendpacket(MC_FRAME packet);
 void multicore_task(void const * argument);
+
+static inline char *stringFromStatus(MC_Status stat)
+{
+    static const char *strings[] = { "Status: OK", "Status: NOK", "Status: Timeout"};
+
+    return strings[stat];
+}
 
 #endif /* SRC_MULTICORECOMM_H_ */

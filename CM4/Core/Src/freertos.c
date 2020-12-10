@@ -30,6 +30,8 @@
 #include "lwip/sys.h"
 #include "lwip/api.h"
 #include "multicorecomm.h"
+#include <string.h>
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,6 +61,8 @@ static void tcpecho_thread(void *arg);
 void tcpecho_init(void);
 void sending_init(void);
 void sender_task(void *arg);
+
+MC_Commands command_analyze(uint8_t *buff);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void const * argument);
@@ -134,8 +138,9 @@ void StartDefaultTask(void const * argument)
   //tcpecho_init();
   //mc_init_task();
 
-  MC_Init();
-  sending_init();
+  mc_init();
+  tcpecho_init();
+  //sending_init();
 
   /* Infinite loop */
   for(;;)
@@ -153,6 +158,9 @@ static void tcpecho_thread(void *arg)
   err_t err, accept_err;
   struct netbuf *buf;
   void *data;
+  MC_Commands command;
+  MC_FRAME package;
+  char *response;
   u16_t len;
 
   LWIP_UNUSED_ARG(arg);
@@ -184,8 +192,16 @@ static void tcpecho_thread(void *arg)
             do
             {
               netbuf_data(buf, &data, &len);
-              netconn_write(newconn, data, len, NETCONN_COPY);
-
+              uint8_t buf_check[20];
+              memset(buf_check, 0, sizeof(buf_check));
+              memcpy(buf_check, buf->p->payload, buf->p->len);
+              //***************
+              command = command_analyze(buf_check); //analyze received command
+              mc_SendReceive( &package, STAT_OK, command, NULL, 0); //send command to cm7 to be executed
+              response = stringFromStatus( package.status );	//make string from status enum
+              netconn_write(newconn, (void *)response, strlen(response), NETCONN_COPY); //send response
+              //***************
+              //netconn_write(newconn, data, len, NETCONN_COPY);
             }
             while (netbuf_next(buf) >= 0);
 
@@ -206,6 +222,21 @@ static void tcpecho_thread(void *arg)
   }
 }
 
+MC_Commands command_analyze(uint8_t *buff){
+
+	MC_Commands command;
+
+	if( !strcmp( buff, "LED2_ON" ) )
+		command = LED2_ON;
+	else if( !strcmp( buff, "LED2_OFF" ) )
+		command = LED2_OFF;
+	else if(!strcmp( buff, "LED2_TOG" ) )
+		command = LED2_TOG;
+	else
+		command = COMMAND_UNKNOWN;
+
+	return command;
+}
 
 /*-----------------------------------------------------------------------------------*/
 
@@ -226,7 +257,7 @@ void sender_task(void *arg){
 		sprintf(buff, "hello CM4\n");
 
 		//mc_send(Stat1, Command1, buff, strlen(buff));
-		mc_SendReceive( &response, Stat1, Command1, buff, strlen(buff) );
+		mc_SendReceive( &response, STAT_OK, LED2_TOG, buff, strlen(buff) );
 
 		vTaskDelay(2000/portTICK_PERIOD_MS);
 	}

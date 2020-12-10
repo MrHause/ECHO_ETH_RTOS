@@ -30,11 +30,7 @@ TaskHandle_t mc_task_handle = NULL;
 MC_FRAME mc_frame_prepare( MC_Status stat, MC_Commands comm, uint8_t *buff, uint16_t buff_len );
 static void mc_send_notification();
 
-int MC_Init(){
-	//create task
-	//if(xTaskCreate(multicore_task, "mcTask", 512, NULL, tskIDLE_PRIORITY+4, &mc_task_handle) != pdPASS )
-	//	return -1;
-
+int mc_init(){
 	//create binary semaphore
 	new_msg_sem = xSemaphoreCreateBinary();
 	if(new_msg_sem == NULL)
@@ -71,13 +67,13 @@ void multicore_task(void const * argument){
 	}
 }
 
-mc_error_t SendPacket(MC_FRAME packet){
+mc_error_t mc_sendpacket(MC_FRAME packet){
 	uint8_t buff[20];
 
 	memset(&packet, 0, sizeof(packet));
 	sprintf(buff, "hello CM4\n");
-	packet.status = Stat2;
-	packet.command = Command2;
+	packet.status = STAT_OK;
+	packet.command = COMMAND_UNKNOWN;
 	packet.dataLen = sizeof(buff);
 	memcpy(packet.data, buff, strlen(buff));
 	memcpy(CM4_to_CM7, &packet, sizeof(packet)+packet.dataLen);
@@ -132,16 +128,10 @@ void HAL_HSEM_FreeCallback(uint32_t SemMask)
 {
 
 	if((SemMask &  __HAL_HSEM_SEMID_TO_MASK(HSEM_RECEIVE))!= 0){
+
 		HAL_HSEM_ActivateNotification(__HAL_HSEM_SEMID_TO_MASK(HSEM_RECEIVE));
 		//give semaphore to mc task
-
-		//xsemaphoregivefromisr !!!!
-		//!!!!!!!!!!!!!!!!!!!!!!!!!!
-		//xSemaphoreGive(new_msg_sem);
-		//static unsigned char ucLocalTickCount = 0;
 		static BaseType_t xHigherPriorityTaskWoken;
-
-		/* A timer tick has occurred. */
 
 		/* Is it time for vATask() to run? */
 		xHigherPriorityTaskWoken = pdFALSE;
@@ -149,23 +139,7 @@ void HAL_HSEM_FreeCallback(uint32_t SemMask)
 		/* Unblock the task by releasing the semaphore. */
 		xSemaphoreGiveFromISR(new_msg_sem, &xHigherPriorityTaskWoken);
 
-		/* If xHigherPriorityTaskWoken was set to true you
-		 we should yield.  The actual macro used here is
-		 port specific. */
 		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 	}
 
 }
-/*
-void HAL_HSEM_FreeCallback(uint32_t SemMask)
-{
-
-	if((SemMask &  __HAL_HSEM_SEMID_TO_MASK(HSEM_RECEIVE))!= 0){
-		HAL_HSEM_ActivateNotification(__HAL_HSEM_SEMID_TO_MASK(HSEM_RECEIVE));
-		//give semaphore to mc task
-		xSemaphoreGive(new_msg_sem);
-	}
-
-}
-*/
-
