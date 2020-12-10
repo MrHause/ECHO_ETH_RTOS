@@ -52,6 +52,8 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 #define TCPECHO_THREAD_PRIO  ( tskIDLE_PRIORITY + 4 )
+
+#define TCP_SERVER_ON 1
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 
@@ -139,8 +141,11 @@ void StartDefaultTask(void const * argument)
   //mc_init_task();
 
   mc_init();
+#ifdef TCP_SERVER_ON
   tcpecho_init();
-  //sending_init();
+#else
+  sending_init();
+#endif
 
   /* Infinite loop */
   for(;;)

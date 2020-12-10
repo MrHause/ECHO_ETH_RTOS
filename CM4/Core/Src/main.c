@@ -39,6 +39,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
 
 /* USER CODE END PD */
