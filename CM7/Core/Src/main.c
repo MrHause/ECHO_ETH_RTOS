@@ -156,8 +156,9 @@ int main(void)
 		  uint8_t buff[20];
 		  memcpy( &package, CM4_to_CM7, sizeof(package) );
 		  MC_Status stat;
-		  stat = command_execute(package.command);
+		  stat = command_execute(package.command); //execute command
 
+		  //prepare response to CM4
 		  response.status = stat;
 		  response.command = package.command;
 		  sprintf(buff, "CM7 says Hi\n");
@@ -170,9 +171,6 @@ int main(void)
 
 		  SEM_NEW_MSG = 0;
 	  }
-
-	  //HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-	  //HAL_Delay(1000);
   }
   /* USER CODE END 3 */
 }
@@ -260,10 +258,9 @@ void HAL_HSEM_FreeCallback(uint32_t SemMask)
 
 	if((SemMask &  __HAL_HSEM_SEMID_TO_MASK(HSEM_ID_8))!= 0){
 		HAL_HSEM_ActivateNotification(__HAL_HSEM_SEMID_TO_MASK(HSEM_ID_8));
-		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 		//HAL_HSEM_Release(HSEM_NEW_MSG, 0);
 		if( !SEM_NEW_MSG )
-			SEM_NEW_MSG = 1;
+			SEM_NEW_MSG = 1; //set flag that new msg has been received for main loop
 	}
 
 }
@@ -275,6 +272,12 @@ MC_Status command_execute(MC_Commands command){
 		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 0);
 	else if( command == LED2_TOG)
 		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	else if( command == LED3_ON )
+		HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 1);
+	else if( command == LED3_OFF )
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 0);
+	else if ( command == LED3_TOG )
+		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 	else
 		return STAT_NOK;
 

@@ -19,6 +19,9 @@ typedef enum{
 	LED2_ON,
 	LED2_OFF,
 	LED2_TOG,
+	LED3_ON,
+	LED3_OFF,
+	LED3_TOG,
 	COMMAND_UNKNOWN
 }MC_Commands;
 

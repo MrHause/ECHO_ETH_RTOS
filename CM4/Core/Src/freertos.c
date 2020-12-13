@@ -237,6 +237,12 @@ MC_Commands command_analyze(uint8_t *buff){
 		command = LED2_OFF;
 	else if(!strcmp( buff, "LED2_TOG" ) )
 		command = LED2_TOG;
+	else if( !strcmp( buff, "LED3_ON" ) )
+		command = LED3_ON;
+	else if( !strcmp( buff, "LED3_OFF" ) )
+		command = LED3_OFF;
+	else if(!strcmp( buff, "LED3_TOG" ) )
+		command = LED3_TOG;
 	else
 		command = COMMAND_UNKNOWN;
 
