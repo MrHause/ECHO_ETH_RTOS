@@ -137,9 +137,6 @@ void StartDefaultTask(void const * argument)
   /* init code for LWIP */
   MX_LWIP_Init();
   /* USER CODE BEGIN StartDefaultTask */
-  //tcpecho_init();
-  //mc_init_task();
-
   mc_init();
 #ifdef TCP_SERVER_ON
   tcpecho_init();

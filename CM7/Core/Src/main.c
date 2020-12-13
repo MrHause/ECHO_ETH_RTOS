@@ -61,6 +61,7 @@ uint8_t SEM_NEW_MSG = 0;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 MC_Status command_execute(MC_Commands command);
+static void send_notification();
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -152,9 +153,9 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  //if( HAL_HSEM_FastTake(HSEM_NEW_MSG) == HAL_OK ){
-	  if( SEM_NEW_MSG ){
+	  if( SEM_NEW_MSG ){ //if new message rexeived from CM4
 		  uint8_t buff[20];
-		  memcpy( &package, CM4_to_CM7, sizeof(package) );
+		  memcpy( &package, CM4_to_CM7, sizeof(package) ); //copy message from shared memory to local structure
 		  MC_Status stat;
 		  stat = command_execute(package.command); //execute command
 
@@ -164,12 +165,11 @@ int main(void)
 		  sprintf(buff, "CM7 says Hi\n");
 		  memcpy(response.data, buff, strlen(buff));
 		  response.dataLen = strlen(buff);
-		  memcpy( CM7_to_CM4, &response, sizeof(response) );
+		  memcpy( CM7_to_CM4, &response, sizeof(response) ); //copy response to the shared memory
 
-		  HAL_HSEM_FastTake(HSEM_SEND);
-		  HAL_HSEM_Release(HSEM_SEND, 0);
+		  send_notification(); //send notification to CM4 about new response. that generates interrupt in second core
 
-		  SEM_NEW_MSG = 0;
+		  SEM_NEW_MSG = 0; //clear flag about new message
 	  }
   }
   /* USER CODE END 3 */
@@ -284,6 +284,10 @@ MC_Status command_execute(MC_Commands command){
 	return STAT_OK;
 }
 
+void send_notification(){
+	  HAL_HSEM_FastTake(HSEM_SEND);
+	  HAL_HSEM_Release(HSEM_SEND, 0);
+}
 /* USER CODE END 4 */
 
 /**

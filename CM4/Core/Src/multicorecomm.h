@@ -43,14 +43,9 @@ typedef enum{
 	MC_ERROR,
 	MC_TIMEOUT
 }mc_error_t;
-//volatile struct shared_data * const shared_ptr = (struct shared_data*)0x30040000;
+
 extern volatile MC_FRAME* CM4_to_CM7;
 extern volatile MC_FRAME* CM7_to_CM4;
-//volatile MC_FRAME* CM4_to_CM7 = (MC_FRAME*)CM4_to_CM7_ADDR;
-//volatile MC_FRAME* CM7_to_CM4 = (MC_FRAME*)CM7_to_CM4_ADDR;
-
-//volatile uint8_t* CM4_to_CM7_buff = (uint8_t *)CM4_to_CM7_ADDR;
-
 
 int mc_init();
 mc_error_t mc_send(MC_Status stat, MC_Commands comm, uint8_t *buff, uint16_t buff_len );

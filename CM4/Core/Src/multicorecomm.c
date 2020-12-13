@@ -13,10 +13,6 @@
 #include "gpio.h"
 #include "multicorecomm.h"
 #include <string.h>
-//#include "FreeRTOS.h"
-//#include "task.h"
-
-
 
 volatile MC_FRAME* CM4_to_CM7 = (MC_FRAME*)CM4_to_CM7_ADDR;
 volatile MC_FRAME* CM7_to_CM4 = (MC_FRAME*)CM7_to_CM4_ADDR;
@@ -55,13 +51,11 @@ void multicore_task(void const * argument){
 	//MC_Init();
 	while(1){
 		//wait for semaphore
-
-		//HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 		if(xSemaphoreTake(new_msg_sem, 500) == pdTRUE){
 			HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 
 			memcpy( &package, CM7_to_CM4, sizeof(package) ); //copy answer from CM7
-			xQueueSend(mc_queue, (void *)&package, (TickType_t)20);
+			xQueueSend(mc_queue, (void *)&package, (TickType_t)20); //add answer to queue
 		}
 		vTaskDelay(1 / portTICK_PERIOD_MS);
 	}
