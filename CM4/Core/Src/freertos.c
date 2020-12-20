@@ -30,6 +30,7 @@
 #include "lwip/sys.h"
 #include "lwip/api.h"
 #include "multicorecomm.h"
+#include "display.h"
 #include <string.h>
 #include <stdio.h>
 /* USER CODE END Includes */
@@ -137,6 +138,7 @@ void StartDefaultTask(void const * argument)
   /* init code for LWIP */
   MX_LWIP_Init();
   /* USER CODE BEGIN StartDefaultTask */
+  display_init();
   mc_init();
 #ifdef TCP_SERVER_ON
   tcpecho_init();
