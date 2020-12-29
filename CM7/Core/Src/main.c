@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "eth.h"
+#include "i2c.h"
 #include "usart.h"
 #include "usb_otg.h"
 #include "gpio.h"
@@ -29,6 +30,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "multicorecomm.h"
+#include "BME280.h"
+#include <math.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -130,7 +133,10 @@ int main(void)
   MX_GPIO_Init();
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
+  MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
+  BME280_init(&hi2c2, BME280_TEMPERATURE_20BIT, BME280_PRESSURE_HIGHRES, BME280_HUMINIDITY_STANDARD, BME280_NORMALMODE);
+
   HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
 
   HAL_NVIC_SetPriority(CM4_SEV_IRQn, 0x0F, 0);
@@ -159,13 +165,14 @@ int main(void)
 		  stat = command_execute(package.command); //execute command
 
 		  //prepare response to CM4
+		  /*
 		  response.status = stat;
 		  response.command = package.command;
 		  sprintf(buff, "CM7 says Hi\n");
 		  memcpy(response.data, buff, strlen(buff));
 		  response.dataLen = strlen(buff);
 		  memcpy( CM7_to_CM4, &response, sizeof(response) ); //copy response to the shared memory
-
+		  */
 		  send_notification(); //send notification to CM4 about new response. that generates interrupt in second core
 
 		  SEM_NEW_MSG = 0; //clear flag about new message
@@ -231,8 +238,8 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_I2C1
-                              |RCC_PERIPHCLK_USB;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_I2C2
+                              |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_USB;
   PeriphClkInitStruct.PLL3.PLL3M = 1;
   PeriphClkInitStruct.PLL3.PLL3N = 24;
   PeriphClkInitStruct.PLL3.PLL3P = 2;
@@ -279,6 +286,22 @@ MC_Status command_execute(MC_Commands command){
 		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 0);
 	else if ( command == LED3_TOG )
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+	else if ( command == GET_TEMP){
+		float temperature,humidity;
+		int32_t pressure;
+		BME280_GetAll(&temperature, &pressure, &humidity);
+		MC_FRAME response;
+		response.status = STAT_OK;
+		response.command = command;
+		uint16_t t1 = (uint16_t)temperature;
+		uint16_t temp = (uint16_t)(temperature*100);
+		uint16_t t2 = (uint16_t)(temp%100);
+		//sprintf(buff, "CM7 says Hi\n");
+		memcpy(response.data, &t1, sizeof(t1));
+		memcpy(response.data+sizeof(t1), &t2, sizeof(t2));
+		response.dataLen = sizeof(t1)+sizeof(t2);
+		memcpy( CM7_to_CM4, &response, sizeof(response) ); //copy response to the shared memory
+	}
 	else
 		return STAT_NOK;
 

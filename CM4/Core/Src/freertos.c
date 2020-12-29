@@ -33,6 +33,8 @@
 #include "display.h"
 #include <string.h>
 #include <stdio.h>
+#include "keys.h"
+#include "menu.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -138,14 +140,16 @@ void StartDefaultTask(void const * argument)
   /* init code for LWIP */
   MX_LWIP_Init();
   /* USER CODE BEGIN StartDefaultTask */
-  display_init();
   mc_init();
 #ifdef TCP_SERVER_ON
-  tcpecho_init();
+  //tcpecho_init();
 #else
   sending_init();
 #endif
 
+  display_init();
+  keys_init();
+  menu_init();
   /* Infinite loop */
   for(;;)
   {

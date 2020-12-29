@@ -22,6 +22,8 @@ typedef enum{
 	LED3_ON,
 	LED3_OFF,
 	LED3_TOG,
+	GET_TEMP,
+	GET_HUM,
 	COMMAND_UNKNOWN
 }MC_Commands;
 

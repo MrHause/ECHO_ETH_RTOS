@@ -30,6 +30,7 @@
 #include "multicorecomm.h"
 #include <string.h>
 #include <stdio.h>
+#include "keys.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -139,6 +140,7 @@ int main(void)
 }
 
 /* USER CODE BEGIN 4 */
+
 
 /* USER CODE END 4 */
 
