@@ -298,11 +298,34 @@ MC_Status command_execute(MC_Commands command){
 		uint16_t t2 = (uint16_t)(temp%100);
 		//sprintf(buff, "CM7 says Hi\n");
 		memcpy(response.data, &t1, sizeof(t1));
-		memcpy(response.data+sizeof(t1), &t2, sizeof(t2));
-		response.dataLen = sizeof(t1)+sizeof(t2);
-		memcpy( CM7_to_CM4, &response, sizeof(response) ); //copy response to the shared memory
-	}
-	else
+		memcpy(response.data + sizeof(t1), &t2, sizeof(t2));
+		response.dataLen = sizeof(t1) + sizeof(t2);
+		memcpy(CM7_to_CM4, &response, sizeof(response)); //copy response to the shared memory
+	} else if (command == GET_HUM) {
+		float temperature, humidity;
+		int32_t pressure;
+		BME280_GetAll(&temperature, &pressure, &humidity);
+		MC_FRAME response;
+		response.status = STAT_OK;
+		response.command = command;
+		uint16_t h1 = (uint16_t) humidity;
+		uint16_t temp = (uint16_t) (humidity * 100);
+		uint16_t h2 = (uint16_t) (temp % 100);
+		memcpy(response.data, &h1, sizeof(h1));
+		memcpy(response.data + sizeof(h1), &h2, sizeof(h2));
+		response.dataLen = sizeof(h1) + sizeof(h2);
+		memcpy(CM7_to_CM4, &response, sizeof(response)); //copy response to the shared memory
+	} else if (command == GET_PRESS) {
+		float temperature, humidity;
+		int32_t pressure;
+		BME280_GetAll(&temperature, &pressure, &humidity);
+		MC_FRAME response;
+		response.status = STAT_OK;
+		response.command = command;
+		memcpy(response.data, &pressure, sizeof(pressure));
+		response.dataLen = sizeof(pressure);
+		memcpy(CM7_to_CM4, &response, sizeof(response)); //copy response to the shared memory
+	} else
 		return STAT_NOK;
 
 	return STAT_OK;

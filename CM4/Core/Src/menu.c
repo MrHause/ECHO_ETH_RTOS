@@ -16,26 +16,31 @@
 #include "keys.h"
 #include "display.h"
 #include "multicorecomm.h"
+#include <stdio.h>
+#include <string.h>
 
 TaskHandle_t menu_task_handler = NULL;
 
 windows_t currentWindow, previousWindow;
 
-disp_window_t wMenu, wTemp;
+disp_window_t wMenu, wTemp, wHumidity, wPressure;
 
 void menu_task(void const * argument);
 
 int menu_init(){
+	//**********window menu******************
 	memset(&wMenu, 0, sizeof(disp_window_t));
 	wMenu.scrollbar_en = 1;
 	wMenu.OK_button_en = 1;
 	wMenu.BACK_button_en = 1;
 	wMenu.list_curr_el = 0;
 	wMenu.list_el_num = 3;
+	wMenu.list_pointer_en = 1;
 	strcpy(wMenu.labels[0], "GET TEMP.");
 	strcpy(wMenu.labels[1], "GET HUMI.");
 	strcpy(wMenu.labels[2], "GET PRESS.");
 
+	//*********window temperature************
 	memset(&wTemp, 0, sizeof(disp_window_t));
 	wTemp.scrollbar_en = 0;
 	wTemp.OK_button_en = 0;
@@ -44,6 +49,26 @@ int menu_init(){
 	wTemp.list_el_num = 2;
 	strcpy(wTemp.labels[3], "TEMPERATURE:");
 	strcpy(wTemp.labels[4], "");
+
+	//*********window humidity************
+	memset(&wHumidity, 0, sizeof(disp_window_t));
+	wHumidity.scrollbar_en = 0;
+	wHumidity.OK_button_en = 0;
+	wHumidity.BACK_button_en = 1;
+	wHumidity.list_curr_el = 0;
+	wHumidity.list_el_num = 2;
+	strcpy(wHumidity.labels[3], "HUMIDITY:");
+	strcpy(wHumidity.labels[4], "");
+
+	//*********window pressure************
+	memset(&wPressure, 0, sizeof(disp_window_t));
+	wPressure.scrollbar_en = 0;
+	wPressure.OK_button_en = 0;
+	wPressure.BACK_button_en = 1;
+	wPressure.list_curr_el = 0;
+	wPressure.list_el_num = 2;
+	strcpy(wPressure.labels[3], "PRESSURE:");
+	strcpy(wPressure.labels[4], "");
 
 	xTaskCreate(menu_task, "menu_task", 256, NULL, tskIDLE_PRIORITY + 4, &menu_task_handler);
 
@@ -60,14 +85,38 @@ void menu_task(void const * argument){
 		key = key_getKey();
 		switch( currentWindow ){
 		case WIN_MENU:
-
 			display_send(wMenu);
 			switch(key){
-			case KEY_OK:
-				if(wMenu.list_curr_el == 0)
+			case KEY_OK:{
+				uint8_t item = display_getActiveElement(wMenu);
+				switch(item){
+				case 0:
 					currentWindow = WIN_TEMPERATURE;
+					break;
+				case 1:
+					currentWindow = WIN_HUMIDITY;
+					break;
+				case 2:
+					currentWindow = WIN_PRESSURE;
+					break;
+				default:
+					break;
+				}
 				break;
+			}
 			case KEY_BACK:
+				break;
+			case KEY_UP:
+				if( wMenu.list_el_num <= (wMenu.list_curr_el+1) )
+					wMenu.list_curr_el = 0;
+				else
+					wMenu.list_curr_el++;
+				break;
+			case KEY_DOWN:
+				if( (wMenu.list_curr_el-1)<0 )
+					wMenu.list_curr_el = wMenu.list_el_num;
+				else
+					wMenu.list_curr_el--;
 				break;
 			default:
 				break;
@@ -94,10 +143,45 @@ void menu_task(void const * argument){
 			}
 			break;
 		}
-		case WIN_HUMIDITY:
+		case WIN_HUMIDITY:{
+			MC_FRAME resp;
+			mc_error_t ret;
+			ret = mc_SendReceive(&resp, STAT_OK, GET_HUM, NULL, 0);
+			uint16_t h1 = 0, h2 = 0;
+			memcpy(&h1, &resp.data[0], 2);
+			memcpy(&h2, &resp.data[2], 2);
+			sprintf(wHumidity.labels[4], "%d.%d", h1, h2);
+			display_send(wHumidity);
+			switch(key){
+			case KEY_OK:
+				currentWindow = WIN_MENU;
+				break;
+			case KEY_BACK:
+				break;
+			default:
+				break;
+			}
 			break;
-		case WIN_PRESSURE:
+		}
+		case WIN_PRESSURE:{
+			MC_FRAME resp;
+			mc_error_t ret;
+			ret = mc_SendReceive(&resp, STAT_OK, GET_PRESS, NULL, 0);
+			int32_t pressure;
+			memcpy(&pressure, &resp.data[0], sizeof(pressure));
+			sprintf(wPressure.labels[4], "%ld Pa", pressure);
+			display_send(wPressure);
+			switch(key){
+			case KEY_OK:
+				currentWindow = WIN_MENU;
+				break;
+			case KEY_BACK:
+				break;
+			default:
+				break;
+			}
 			break;
+		}
 		default:
 			break;
 		}

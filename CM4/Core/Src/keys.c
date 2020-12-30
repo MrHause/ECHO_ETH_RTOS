@@ -42,27 +42,42 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 
 	/* We have not woken a task at the start of the ISR. */
 	xHigherPriorityTaskWoken = pdFALSE;
-
+	static uint8_t one_shot_flag = 0;
 	if(GPIO_Pin == GPIO_PIN_10){
 		__HAL_GPIO_EXTID2_CLEAR_IT(GPIO_Pin);
 		key = KEY_UP;
-		xQueueSendFromISR( keys_queue, &key, &xHigherPriorityTaskWoken );
+		//one_shot_flag++;
+		//if( one_shot_flag%2 != 0 )
+			xQueueSendFromISR( keys_queue, &key, &xHigherPriorityTaskWoken );
+		//else
+		//	one_shot_flag = 0;
 	}
 	if(GPIO_Pin == GPIO_PIN_11){
 		__HAL_GPIO_EXTID2_CLEAR_IT(GPIO_Pin);
 		key = KEY_DOWN;
-		xQueueSendFromISR( keys_queue, &key, &xHigherPriorityTaskWoken );
+		//one_shot_flag++;
+		//if( one_shot_flag%2 != 0 )
+			xQueueSendFromISR( keys_queue, &key, &xHigherPriorityTaskWoken );
+		//else
+		//	one_shot_flag = 0;
 	}
 	if(GPIO_Pin == GPIO_PIN_13){
 		__HAL_GPIO_EXTID2_CLEAR_IT(GPIO_Pin);
 		key = KEY_OK;
-
-		xQueueSendFromISR( keys_queue, &key, &xHigherPriorityTaskWoken );
+		one_shot_flag++;
+		if( one_shot_flag%2 != 0 )
+			xQueueSendFromISR( keys_queue, &key, &xHigherPriorityTaskWoken );
+		else
+			one_shot_flag = 0;
 	}
 	if(GPIO_Pin == GPIO_PIN_14){
 		__HAL_GPIO_EXTID2_CLEAR_IT(GPIO_Pin);
 		key = KEY_BACK;
-		xQueueSendFromISR( keys_queue, &key, &xHigherPriorityTaskWoken );
+		one_shot_flag++;
+		if( one_shot_flag%2 != 0 )
+			xQueueSendFromISR( keys_queue, &key, &xHigherPriorityTaskWoken );
+		else
+			one_shot_flag = 0;
 	}
     if( xHigherPriorityTaskWoken )
     {

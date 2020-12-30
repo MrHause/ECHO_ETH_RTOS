@@ -76,7 +76,8 @@ void display_task(void const * argument){
 					SSD1306_GotoXY(13, (i*12));
 					SSD1306_Puts(window.labels[i], &Font_7x10, 1);
 				}
-				SSD1306_DrawLine(13, 9+(window.list_curr_el*10), 90, 9+(window.list_curr_el*10), 1);
+				if(window.list_pointer_en)
+					SSD1306_DrawLine(13, 9+(window.list_curr_el*12), 90, 9+(window.list_curr_el*12), 1);
 	    	}
 	    	SSD1306_UpdateScreen();
 	    }
@@ -87,4 +88,11 @@ void display_task(void const * argument){
 
 void display_send(disp_window_t window){
 	xQueueSend(display_queue, &window, (TickType_t)10);
+}
+
+uint8_t display_getActiveElement(disp_window_t window){
+	if( window.list_el_num )
+		return window.list_curr_el;
+	else
+		return 0;
 }

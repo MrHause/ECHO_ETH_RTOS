@@ -18,10 +18,11 @@ typedef struct{
 	uint8_t list_el_num;
 	uint8_t list_curr_el;
 	uint8_t labels[LABELS_MAX_NUM][LABEL_MAX_BUF];
+	uint8_t list_pointer_en;
 }disp_window_t;
 
 void display_init();
 
 void display_send(disp_window_t window);
-
+uint8_t display_getActiveElement(disp_window_t window);
 #endif /* SRC_DISPLAY_H_ */
