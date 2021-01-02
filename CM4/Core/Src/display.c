@@ -15,14 +15,17 @@
 #include "fonts.h"
 #include "display.h"
 #include "multicorecomm.h"
+#include "ssd1306.h"
 
 TaskHandle_t disp_task_handle = NULL;
 
 QueueHandle_t display_queue;
 
+static void display_drawScrollBar();
+static void display_drawUnderLine(disp_window_t window);
 void display_task(void const * argument);
 
-void display_init(){
+int display_init(){
 	display_queue = xQueueCreate(2, sizeof(disp_window_t));
 	if(display_queue == NULL)
 		return -1;
@@ -33,35 +36,18 @@ void display_init(){
 	SSD1306_Init();
 	SSD1306_Fill(0);
 	SSD1306_UpdateScreen();
+	return 0;
 }
 
 void display_task(void const * argument){
 	while(1){
 		disp_window_t window;
-		MC_FRAME resp;
-		mc_error_t ret;
-		uint8_t str_buf[10] = {0};
-		/*
-		ret = mc_SendReceive(&resp, STAT_OK, GET_TEMP, NULL, 0);
-		uint16_t t1 = 0, t2 = 0;
-		memcpy(&t1, &resp.data[0], 2);
-		memcpy(&t2, &resp.data[2], 2);
-		sprintf(str_buf, "%d.%d C", t1, t2);
-		SSD1306_Fill(0); //clear screen
-		SSD1306_GotoXY(0, 10);
-		SSD1306_Puts((char *)str_buf, &Font_7x10, 1);
-		SSD1306_GotoXY(0, 22);
-		SSD1306_DrawLine(0, 22, 127, 22, 1);
-		SSD1306_DrawFilledCircle(64, 40, 15, 1);
-		SSD1306_UpdateScreen();
-		 */
+
 	    if( xQueueReceive( display_queue, &window, ( TickType_t ) 100 ) == pdPASS )
 	    {
 	    	SSD1306_Fill(0); //clear screen
 	    	if(window.scrollbar_en){
-	    		SSD1306_DrawLine(10, 0, 10, 63, 1);
-	    		SSD1306_DrawFilledTriangle(0, 10, 5, 0, 10, 10, 1);
-	    		SSD1306_DrawFilledTriangle(0, 53, 5, 63, 10, 53, 1);
+	    		display_drawScrollBar();
 	    	}
 	    	if(window.OK_button_en){
 	    		SSD1306_GotoXY(110, 0);
@@ -76,9 +62,10 @@ void display_task(void const * argument){
 					SSD1306_GotoXY(13, (i*12));
 					SSD1306_Puts(window.labels[i], &Font_7x10, 1);
 				}
-				if(window.list_pointer_en)
-					SSD1306_DrawLine(13, 9+(window.list_curr_el*12), 90, 9+(window.list_curr_el*12), 1);
 	    	}
+			if (window.list_pointer_en)
+				display_drawUnderLine(window);
+
 	    	SSD1306_UpdateScreen();
 	    }
 
@@ -95,4 +82,27 @@ uint8_t display_getActiveElement(disp_window_t window){
 		return window.list_curr_el;
 	else
 		return 0;
+}
+
+static void display_drawScrollBar(){
+	SSD1306_DrawLine(10, 0, 10, 63, 1);
+	SSD1306_DrawFilledTriangle(0, 10, 5, 0, 10, 10, 1);
+	SSD1306_DrawFilledTriangle(0, 53, 5, 63, 10, 53, 1);
+}
+
+static void display_drawUnderLine(disp_window_t window){
+	SSD1306_DrawLine(13, 9 + (window.list_curr_el * 12), 90, 9 + (window.list_curr_el * 12), 1);
+}
+
+void display_incrementUnderline(disp_window_t *window){
+	if( window->list_el_num <= (window->list_curr_el+1) )
+		window->list_curr_el = 0;
+	else
+		window->list_curr_el++;
+}
+void display_decrementUnderline(disp_window_t *window){
+	if( (window->list_curr_el-1)<0 )
+		window->list_curr_el = window->list_el_num;
+	else
+		window->list_curr_el--;
 }

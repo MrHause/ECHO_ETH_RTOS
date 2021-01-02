@@ -2,7 +2,7 @@
  * display.h
  *
  *  Created on: Dec 20, 2020
- *      Author: mrhau
+ *      Author: mrhause
  */
 
 #ifndef SRC_DISPLAY_H_
@@ -21,8 +21,10 @@ typedef struct{
 	uint8_t list_pointer_en;
 }disp_window_t;
 
-void display_init();
+int display_init();
 
 void display_send(disp_window_t window);
 uint8_t display_getActiveElement(disp_window_t window);
+void display_incrementUnderline(disp_window_t *window);
+void display_decrementUnderline(disp_window_t *window);
 #endif /* SRC_DISPLAY_H_ */
