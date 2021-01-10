@@ -102,7 +102,7 @@ void display_incrementUnderline(disp_window_t *window){
 }
 void display_decrementUnderline(disp_window_t *window){
 	if( (window->list_curr_el-1)<0 )
-		window->list_curr_el = window->list_el_num;
+		window->list_curr_el = (window->list_el_num-1);
 	else
 		window->list_curr_el--;
 }
