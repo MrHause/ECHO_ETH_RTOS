@@ -23,7 +23,7 @@ TaskHandle_t menu_task_handler = NULL;
 
 windows_t currentWindow, previousWindow;
 
-disp_window_t wMenu, wTemp, wHumidity, wPressure;
+disp_window_t wMenu, wTemp, wHumidity, wPressure, wWeather;
 
 void menu_task(void const * argument);
 static void menu_window_init();
@@ -60,6 +60,9 @@ void menu_task(void const * argument){
 					break;
 				case 2:
 					menu_setActiveWindow(WIN_PRESSURE);
+					break;
+				case 3:
+					menu_setActiveWindow(WIN_WEATHER_PARAMS);
 					break;
 				default:
 					break;
@@ -144,6 +147,37 @@ void menu_task(void const * argument){
 			}
 			break;
 		}
+		case WIN_WEATHER_PARAMS:{
+			MC_FRAME resp;
+			mc_error_t ret;
+			ret = mc_SendReceive(&resp, STAT_OK, GET_WEATHER_PARAM, NULL, 0);
+			//pars temperature
+			uint16_t t1 = 0, t2 = 0;
+			memcpy(&t1, &resp.data[0], 2);
+			memcpy(&t2, &resp.data[2], 2);
+			sprintf(wWeather.labels[1], "%d.%d C", t1, t2);
+			//parse humidity
+			uint16_t h1 = 0, h2 = 0;
+			memcpy(&h1, &resp.data[4], 2);
+			memcpy(&h2, &resp.data[6], 2);
+			sprintf(wWeather.labels[2], "HUMIDITY: %d.%d", h1, h2);
+			//parse presure
+			int32_t pressure;
+			memcpy(&pressure, &resp.data[8], sizeof(pressure));
+			sprintf(wWeather.labels[4], "%ld Pa", pressure);
+			display_send(wWeather);
+			switch(key){
+			case KEY_OK:
+				key_debouce();
+				menu_setActiveWindow(WIN_MENU);
+				break;
+			case KEY_BACK:
+				break;
+			default:
+				break;
+			}
+			break;
+		}
 		default:
 			break;
 		}
@@ -162,11 +196,12 @@ static void menu_window_init(){
 	wMenu.OK_button_en = 1;
 	wMenu.BACK_button_en = 1;
 	wMenu.list_curr_el = 0;
-	wMenu.list_el_num = 3;
+	wMenu.list_el_num = 4;
 	wMenu.list_pointer_en = 1;
 	strcpy(wMenu.labels[0], "GET TEMP.");
 	strcpy(wMenu.labels[1], "GET HUMI.");
 	strcpy(wMenu.labels[2], "GET PRESS.");
+	strcpy(wMenu.labels[3], "ALL PARAMETERS");
 
 	//*********window temperature************
 	memset(&wTemp, 0, sizeof(disp_window_t));
@@ -197,4 +232,17 @@ static void menu_window_init(){
 	wPressure.list_el_num = 2;
 	strcpy(wPressure.labels[3], "PRESSURE:");
 	strcpy(wPressure.labels[4], "");
+
+	//**********WINDOW WEATHER*************
+	memset(&wWeather, 0, sizeof(disp_window_t));
+	wWeather.scrollbar_en = 0;
+	wWeather.OK_button_en = 0;
+	wWeather.BACK_button_en = 1;
+	wWeather.list_curr_el = 0;
+	wWeather.list_el_num = 6;
+	strcpy(wWeather.labels[0], "TEMPERATURE:");
+	strcpy(wWeather.labels[1], "");
+	strcpy(wWeather.labels[2], "HUMIDITY:");
+	strcpy(wWeather.labels[3], "PRESSURE:");
+	strcpy(wWeather.labels[4], "");
 }

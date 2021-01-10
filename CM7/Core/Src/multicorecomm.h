@@ -22,6 +22,7 @@ typedef enum{
 	GET_TEMP,
 	GET_HUM,
 	GET_PRESS,
+	GET_WEATHER_PARAM,
 	COMMAND_UNKNOWN
 }MC_Commands;
 

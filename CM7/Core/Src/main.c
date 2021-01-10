@@ -163,16 +163,6 @@ int main(void)
 		  memcpy( &package, CM4_to_CM7, sizeof(package) ); //copy message from shared memory to local structure
 		  MC_Status stat;
 		  stat = command_execute(package.command); //execute command
-
-		  //prepare response to CM4
-		  /*
-		  response.status = stat;
-		  response.command = package.command;
-		  sprintf(buff, "CM7 says Hi\n");
-		  memcpy(response.data, buff, strlen(buff));
-		  response.dataLen = strlen(buff);
-		  memcpy( CM7_to_CM4, &response, sizeof(response) ); //copy response to the shared memory
-		  */
 		  send_notification(); //send notification to CM4 about new response. that generates interrupt in second core
 
 		  SEM_NEW_MSG = 0; //clear flag about new message
@@ -324,6 +314,26 @@ MC_Status command_execute(MC_Commands command){
 		response.command = command;
 		memcpy(response.data, &pressure, sizeof(pressure));
 		response.dataLen = sizeof(pressure);
+		memcpy(CM7_to_CM4, &response, sizeof(response)); //copy response to the shared memory
+	}else if (command == GET_WEATHER_PARAM) {
+		float temperature, humidity;
+		int32_t pressure;
+		BME280_GetAll(&temperature, &pressure, &humidity);
+		MC_FRAME response;
+		response.status = STAT_OK;
+		response.command = command;
+		uint16_t t1 = (uint16_t)temperature;
+		uint16_t temp = (uint16_t) (temperature * 100);
+		uint16_t t2 = (uint16_t) (temp % 100);
+		memcpy(response.data, &t1, sizeof(t1));
+		memcpy(response.data + sizeof(t1), &t2, sizeof(t2));
+		uint16_t h1 = (uint16_t) humidity;
+		temp = (uint16_t) (humidity * 100);
+		uint16_t h2 = (uint16_t) (temp % 100);
+		memcpy(response.data + sizeof(t1) + sizeof(t2), &h1, sizeof(h1));
+		memcpy(response.data + sizeof(t1) + sizeof(t2) + sizeof(h1), &h2,sizeof(h2));
+		memcpy(response.data + sizeof(t1) + sizeof(t2) + sizeof(h1)+ sizeof(h2), &pressure, sizeof(pressure));
+		response.dataLen = sizeof(t1) + sizeof(t2) + sizeof(h1) + sizeof(h2) + sizeof(pressure);
 		memcpy(CM7_to_CM4, &response, sizeof(response)); //copy response to the shared memory
 	} else
 		return STAT_NOK;
