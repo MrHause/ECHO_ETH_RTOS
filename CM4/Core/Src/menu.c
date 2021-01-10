@@ -64,14 +64,17 @@ void menu_task(void const * argument){
 				default:
 					break;
 				}
+				key_debouce();
 				break;
 			}
 			case KEY_BACK:
 				break;
 			case KEY_UP:
+					key_debouce();
 					display_incrementUnderline(&wMenu);
 				break;
 			case KEY_DOWN:
+					key_debouce();
 					display_decrementUnderline(&wMenu);
 				break;
 			default:
@@ -90,6 +93,7 @@ void menu_task(void const * argument){
 			display_send(wTemp);
 			switch(key){
 			case KEY_OK:
+				key_debouce();
 				menu_setActiveWindow(WIN_MENU);
 				break;
 			case KEY_BACK:
@@ -110,6 +114,7 @@ void menu_task(void const * argument){
 			display_send(wHumidity);
 			switch(key){
 			case KEY_OK:
+				key_debouce();
 				menu_setActiveWindow(WIN_MENU);
 				break;
 			case KEY_BACK:
@@ -129,6 +134,7 @@ void menu_task(void const * argument){
 			display_send(wPressure);
 			switch(key){
 			case KEY_OK:
+				key_debouce();
 				menu_setActiveWindow(WIN_MENU);
 				break;
 			case KEY_BACK:

@@ -36,6 +36,11 @@ keys_t key_getKey(){
 	return KEY_NONE;
 }
 
+void key_debouce(){
+	vTaskDelay(50/portTICK_PERIOD_MS);
+	xQueueReset(keys_queue);
+}
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 	keys_t key;
 	BaseType_t xHigherPriorityTaskWoken;

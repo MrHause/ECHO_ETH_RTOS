@@ -18,4 +18,5 @@ typedef enum{
 
 int key_init();
 keys_t key_getKey();
+void key_debouce();
 #endif /* SRC_KEYS_H_ */
