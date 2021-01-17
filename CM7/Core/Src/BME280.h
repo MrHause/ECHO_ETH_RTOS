@@ -96,5 +96,7 @@ float BME280_GetHuminidity();
 uint8_t BME280_GetAll(float *temperature, int32_t *pressure, float *huminidity);
 float BME280_ReadAltitude(float sea_level_pa);
 void BME280_init(I2C_HandleTypeDef *i2c_h, uint8_t temperature_resolution, uint8_t pressure_oversampling, uint8_t huminidity_oversampling, uint8_t mode);
-uint8_t BME280_GetPressure2(int32_t *pressure,float *temperature, float *press_out,uint16_t alltitude);
+uint8_t BME280_GetPressure2(int32_t *pressure,float *temperature, float *press_out);
+void BME280_setAltitude(uint32_t value);
+uint32_t BME280_getAltitude();
 #endif /* INC_BME280_H_ */

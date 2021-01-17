@@ -132,8 +132,12 @@ void menu_task(void const * argument){
 			mc_error_t ret;
 			ret = mc_SendReceive(&resp, STAT_OK, GET_PRESS, NULL, 0);
 			int32_t pressure;
-			memcpy(&pressure, &resp.data[0], sizeof(pressure));
-			sprintf(wPressure.labels[4], "%ld Pa", pressure);
+			//memcpy(&pressure, &resp.data[0], sizeof(pressure));
+			//sprintf(wPressure.labels[4], "%ld Pa", pressure);
+			uint16_t h1 = 0, h2 = 0;
+			memcpy(&h1, &resp.data[0], 2);
+			memcpy(&h2, &resp.data[2], 2);
+			sprintf(wPressure.labels[4], "%d.%d", h1, h2);
 			display_send(wPressure);
 			switch(key){
 			case KEY_OK:

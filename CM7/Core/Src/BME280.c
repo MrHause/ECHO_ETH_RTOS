@@ -17,8 +17,17 @@ int8_t h6;
 int16_t t2, t3, p2, p3, p4, p5, p6, p7, p8, p9, h2, h4, h5;
 uint16_t t1, p1;
 int32_t t_fine;
+static uint32_t altitude;
 
 //****************functions**********************************
+void BME280_setAltitude(uint32_t value){
+	altitude = value;
+}
+uint32_t BME280_getAltitude(){
+	return altitude;
+}
+
+
 uint8_t Read8bit(uint8_t reg_addr){
 	uint8_t read_data;
 	HAL_I2C_Mem_Read(i2c_handler, Dev_ADDR, reg_addr, 1, &read_data, 1, 10);
@@ -254,9 +263,10 @@ int32_t BME280_GetPressure(){
 
 		return 0;
  }
- uint8_t BME280_GetPressure2(int32_t *pressure, float *temperature,float *press_out,uint16_t alltitude){
+ uint8_t BME280_GetPressure2(int32_t *pressure, float *temperature,float *press_out){
 	 float h,temp,pres,p,mnpm,p_average,tpm,t_average;
-	 mnpm = alltitude;
+	 //mnpm = alltitude;
+	 mnpm = altitude;
 	 temp = *temperature;
 	 pres = *pressure/100;
 	 h = 8000 * ((1+0.004*temp)/pres);

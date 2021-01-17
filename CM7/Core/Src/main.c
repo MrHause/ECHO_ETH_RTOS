@@ -32,6 +32,7 @@
 #include "multicorecomm.h"
 #include "BME280.h"
 #include <math.h>
+#include "FLASH_SECTOR.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,8 +47,11 @@
 #define HSEM_NEW_MSG (7U)
 #define HSEM_ID_8 (8U)
 #define HSEM_SEND (9U)
-
+#define ALTITUDE_MAGIC 0xfecd05ff
+#define ALTITUDE_INIT 0x0000012c
 uint8_t SEM_NEW_MSG = 0;
+uint32_t flash_values[] = {ALTITUDE_MAGIC, ALTITUDE_INIT};
+__IO uint32_t RX_Data[2];
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -148,6 +152,18 @@ int main(void)
 
   MC_FRAME package;
   MC_FRAME response;
+  HAL_FLASHEx_Unlock_Bank1();
+  Flash_Read_Data(0x080E0000, RX_Data, 2);
+  HAL_FLASHEx_Lock_Bank1();
+	if (RX_Data[0] != ALTITUDE_MAGIC) { //flash not initialized
+		HAL_FLASHEx_Unlock_Bank1();
+		Flash_Write_Data(0x080E0000, flash_values); //write magic value and init altitude for pressure meassure
+		BME280_setAltitude(ALTITUDE_INIT);
+		HAL_FLASHEx_Lock_Bank1();
+	} else {
+		BME280_setAltitude((uint32_t)RX_Data[1]); //set read altitude.
+	}
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -306,14 +322,22 @@ MC_Status command_execute(MC_Commands command){
 		response.dataLen = sizeof(h1) + sizeof(h2);
 		memcpy(CM7_to_CM4, &response, sizeof(response)); //copy response to the shared memory
 	} else if (command == GET_PRESS) {
-		float temperature, humidity;
+		float temperature, humidity,pressure_mnpm;
 		int32_t pressure;
 		BME280_GetAll(&temperature, &pressure, &humidity);
+		BME280_GetPressure2(&pressure, &temperature, &pressure_mnpm);
+		uint16_t h1 = (uint16_t) pressure_mnpm;
+		uint16_t temp = (uint16_t) (pressure_mnpm * 100);
+		uint16_t h2 = (uint16_t) (temp % 100);
+
 		MC_FRAME response;
 		response.status = STAT_OK;
 		response.command = command;
-		memcpy(response.data, &pressure, sizeof(pressure));
-		response.dataLen = sizeof(pressure);
+		memcpy(response.data, &h1, sizeof(h1));
+		memcpy(response.data + sizeof(h1), &h2, sizeof(h2));
+		response.dataLen = sizeof(h1) + sizeof(h2);
+		//memcpy(response.data, &pressure_mnpm, sizeof(pressure_mnpm));
+		//response.dataLen = sizeof(pressure_mnpm);
 		memcpy(CM7_to_CM4, &response, sizeof(response)); //copy response to the shared memory
 	}else if (command == GET_WEATHER_PARAM) {
 		float temperature, humidity;
