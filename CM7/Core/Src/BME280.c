@@ -264,18 +264,12 @@ int32_t BME280_GetPressure(){
 		return 0;
  }
  uint8_t BME280_GetPressure2(int32_t *pressure, float *temperature,float *press_out){
-	 float h,temp,pres,p,mnpm,p_average,tpm,t_average;
-	 //mnpm = alltitude;
+	 float temp,pres,mnpm;
 	 mnpm = altitude;
 	 temp = *temperature;
-	 pres = *pressure/100;
-	 h = 8000 * ((1+0.004*temp)/pres);
-	 p = pres + (mnpm/h);
-	 p_average = (pres + p)/2;
-	 tpm = temp + ((0.6*mnpm)/100);
-	 t_average = (temp+tpm)/2;
-	 h = 8000*((1+0.004*t_average)/p_average);
-	 *press_out = pres + (mnpm/h);
+	 pres = (float)*pressure/100;
+	 float to_exp = exp(-(0.0289644f*9.81f*mnpm/(8.31f*(temp+273.15f))));
+	 *press_out = pres / to_exp;
 	 return 0;
  }
 
