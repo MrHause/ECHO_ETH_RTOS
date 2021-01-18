@@ -280,8 +280,8 @@ static void menu_window_init(){
 	//*****WINDOW SET ALTITUTE***********
 	memset(&wSetAltitude, 0, sizeof(disp_window_t));
 	wSetAltitude.scrollbar_en = 0;
-	wSetAltitude.OK_button_en = 0;
-	wSetAltitude.BACK_button_en = 1;
+	wSetAltitude.OK_button_en = 1;
+	wSetAltitude.BACK_button_en = 0;
 	wSetAltitude.list_curr_el = 0;
 	wSetAltitude.list_el_num = 2;
 	strcpy(wSetAltitude.labels[0], "ALTITUDE:");

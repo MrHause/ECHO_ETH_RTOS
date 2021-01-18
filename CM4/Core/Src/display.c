@@ -54,7 +54,7 @@ void display_task(void const * argument){
 	    		SSD1306_GotoXY(110, 0);
 	    		SSD1306_Puts("OK", &Font_7x10, 1);
 	    	}
-	    	if(window.OK_button_en){
+	    	if(window.BACK_button_en){
 	    		SSD1306_GotoXY(90, 52);
 	    		SSD1306_Puts("BACK", &Font_7x10, 1);
 	    	}
