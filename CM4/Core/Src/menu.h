@@ -14,6 +14,7 @@ typedef enum{
 	WIN_HUMIDITY,
 	WIN_PRESSURE,
 	WIN_WEATHER_PARAMS,
+	WIN_SET_ALTITUDE,
 	WIN_NONE
 }windows_t;
 

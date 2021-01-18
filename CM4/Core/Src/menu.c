@@ -23,7 +23,7 @@ TaskHandle_t menu_task_handler = NULL;
 
 windows_t currentWindow, previousWindow;
 
-disp_window_t wMenu, wTemp, wHumidity, wPressure, wWeather;
+disp_window_t wMenu, wTemp, wHumidity, wPressure, wWeather, wSetAltitude;
 
 void menu_task(void const * argument);
 static void menu_window_init();
@@ -62,7 +62,10 @@ void menu_task(void const * argument){
 					menu_setActiveWindow(WIN_PRESSURE);
 					break;
 				case 3:
-					menu_setActiveWindow(WIN_WEATHER_PARAMS);
+					//menu_setActiveWindow(WIN_WEATHER_PARAMS);
+					//wSetAltitude.labels[3][0] = '0';
+					strcpy(wSetAltitude.labels[3], "0000");
+					menu_setActiveWindow(WIN_SET_ALTITUDE);
 					break;
 				default:
 					break;
@@ -182,6 +185,30 @@ void menu_task(void const * argument){
 			}
 			break;
 		}
+		case WIN_SET_ALTITUDE:{
+			display_send(wSetAltitude); //refresh
+			switch(key){
+			case KEY_OK:
+				key_debouce();
+				menu_setActiveWindow(WIN_MENU);
+				break;
+			case KEY_BACK:
+				break;
+			case KEY_UP:
+					key_debouce();
+					display_incrementIndicator(&wSetAltitude);
+					display_send(wSetAltitude);
+				break;
+			case KEY_DOWN:
+					key_debouce();
+					display_incrementIndicatedPosition(&wSetAltitude);
+					display_send(wSetAltitude);
+				break;
+			default:
+				break;
+			}
+			break;
+		}
 		default:
 			break;
 		}
@@ -249,4 +276,17 @@ static void menu_window_init(){
 	strcpy(wWeather.labels[2], "HUMIDITY:");
 	strcpy(wWeather.labels[3], "PRESSURE:");
 	strcpy(wWeather.labels[4], "");
+
+	//*****WINDOW SET ALTITUTE***********
+	memset(&wSetAltitude, 0, sizeof(disp_window_t));
+	wSetAltitude.scrollbar_en = 0;
+	wSetAltitude.OK_button_en = 0;
+	wSetAltitude.BACK_button_en = 1;
+	wSetAltitude.list_curr_el = 0;
+	wSetAltitude.list_el_num = 2;
+	strcpy(wSetAltitude.labels[0], "ALTITUDE:");
+	wSetAltitude.labelsEditFocus = 3;
+	wSetAltitude.labelsEdit[2] = 1;	//enable label 3 to be edited
+	wSetAltitude.labelsEditIndicator = 0; //begining position of the indicator
+	wSetAltitude.labelsEditMaxIndicator = 4; //maximum 4 position can be edited
 }
