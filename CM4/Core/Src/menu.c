@@ -188,10 +188,16 @@ void menu_task(void const * argument){
 		case WIN_SET_ALTITUDE:{
 			display_send(wSetAltitude); //refresh
 			switch(key){
-			case KEY_OK:
+			case KEY_OK:{
+				MC_FRAME resp;
+				mc_error_t ret;
+				uint8_t buff[10];
+				strcpy(buff, wSetAltitude.labels[3]);
+				ret = mc_SendReceive(&resp, STAT_OK, SET_ALTITUDE, buff, sizeof(buff));
 				key_debouce();
 				menu_setActiveWindow(WIN_MENU);
 				break;
+			}
 			case KEY_BACK:
 				break;
 			case KEY_UP:

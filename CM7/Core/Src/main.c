@@ -33,6 +33,7 @@
 #include "BME280.h"
 #include <math.h>
 #include "FLASH_SECTOR.h"
+#include "stdlib.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,7 +69,7 @@ __IO uint32_t RX_Data[2];
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-MC_Status command_execute(MC_Commands command);
+MC_Status command_execute(MC_FRAME frame);
 void send_notification();
 /* USER CODE END PFP */
 
@@ -178,7 +179,7 @@ int main(void)
 		  uint8_t buff[20];
 		  memcpy( &package, CM4_to_CM7, sizeof(package) ); //copy message from shared memory to local structure
 		  MC_Status stat;
-		  stat = command_execute(package.command); //execute command
+		  stat = command_execute(package); //execute command
 		  send_notification(); //send notification to CM4 about new response. that generates interrupt in second core
 
 		  SEM_NEW_MSG = 0; //clear flag about new message
@@ -278,8 +279,8 @@ void HAL_HSEM_FreeCallback(uint32_t SemMask)
 	}
 
 }
-MC_Status command_execute(MC_Commands command){
-
+MC_Status command_execute(MC_FRAME frame){
+	MC_Commands command = frame.command;
 	if( command == LED2_ON )
 		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 1);
 	else if( command == LED2_OFF )
@@ -359,7 +360,22 @@ MC_Status command_execute(MC_Commands command){
 		memcpy(response.data + sizeof(t1) + sizeof(t2) + sizeof(h1)+ sizeof(h2), &pressure, sizeof(pressure));
 		response.dataLen = sizeof(t1) + sizeof(t2) + sizeof(h1) + sizeof(h2) + sizeof(pressure);
 		memcpy(CM7_to_CM4, &response, sizeof(response)); //copy response to the shared memory
-	} else
+	}else if( command == SET_ALTITUDE){
+		uint8_t buff[10];
+		memcpy(buff, frame.data, frame.dataLen);
+		int altitude = atoi(buff);
+		flash_values[1] = (uint32_t)altitude;
+		HAL_FLASHEx_Unlock_Bank1();
+		Flash_Write_Data(0x080E0000, flash_values); //write magic value and init altitude for pressure meassure
+		BME280_setAltitude(ALTITUDE_INIT);
+		HAL_FLASHEx_Lock_Bank1();
+		MC_FRAME response;
+		memset(&response, 0, sizeof(response));
+		response.status = STAT_OK;
+		response.command = command;
+		response.dataLen = 0;
+		memcpy(CM7_to_CM4, &response, sizeof(response));
+	}else
 		return STAT_NOK;
 
 	return STAT_OK;

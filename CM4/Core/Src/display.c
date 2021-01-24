@@ -59,7 +59,7 @@ void display_task(void const * argument){
 	    		SSD1306_Puts("BACK", &Font_7x10, 1);
 	    	}
 	    	if(window.list_el_num){
-				for(uint8_t i = 0; i<LABELS_MAX_NUM; i++){
+				for(uint8_t i = 0; i<LABALES_MAX_DISP_ELEM; i++){
 					SSD1306_GotoXY(13, (i*12));
 					SSD1306_Puts(window.labels[i], &Font_7x10, 1);
 					if(window.labelsEdit[i]){ 		//if label is textedit

@@ -8,8 +8,9 @@
 #ifndef SRC_DISPLAY_H_
 #define SRC_DISPLAY_H_
 
-#define LABELS_MAX_NUM 5
-#define LABEL_MAX_BUF 20
+#define LABELS_MAX_NUM 5 //number of elements in the list
+#define LABALES_MAX_DISP_ELEM 4 //number of elements that display can handle
+#define LABEL_MAX_BUF 20 //number of signs in label
 
 typedef struct{
 	uint8_t scrollbar_en;
