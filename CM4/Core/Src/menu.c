@@ -62,10 +62,10 @@ void menu_task(void const * argument){
 					menu_setActiveWindow(WIN_PRESSURE);
 					break;
 				case 3:
-					menu_setActiveWindow(WIN_WEATHER_PARAMS);
-					//wSetAltitude.labels[3][0] = '0';
-					//strcpy(wSetAltitude.labels[3], "0000");
-					//menu_setActiveWindow(WIN_SET_ALTITUDE);
+					//menu_setActiveWindow(WIN_WEATHER_PARAMS);
+					wSetAltitude.labels[3][0] = '0';
+					strcpy(wSetAltitude.labels[3], "0000");
+					menu_setActiveWindow(WIN_SET_ALTITUDE);
 					break;
 				default:
 					break;

@@ -181,7 +181,7 @@ uint32_t Flash_Write_Data (uint32_t StartSectorAddress, uint32_t * DATA_32)
 
 	  /* Fill EraseInit structure*/
 	  EraseInitStruct.TypeErase     = FLASH_TYPEERASE_SECTORS;
-	  EraseInitStruct.VoltageRange  = FLASH_VOLTAGE_RANGE_3;
+	  EraseInitStruct.VoltageRange  = FLASH_VOLTAGE_RANGE_4;
 	  EraseInitStruct.Sector        = StartSector;
 	  EraseInitStruct.NbSectors     = (EndSector - StartSector) + 1;
 
@@ -196,7 +196,16 @@ uint32_t Flash_Write_Data (uint32_t StartSectorAddress, uint32_t * DATA_32)
 
 	  /* Program the user Flash area word by word
 	    (area defined by FLASH_USER_START_ADDR and FLASH_USER_END_ADDR) ***********/
-
+	     if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD, StartSectorAddress, &DATA_32[sofar]) == HAL_OK)
+	     {
+	    	 StartSectorAddress += 4;  // use StartPageAddress += 2 for half word and 8 for double word
+	    	 sofar++;
+	     }
+	     else
+	     {
+	    	 return HAL_FLASH_GetError ();
+	     }
+	  /*
 	   while (sofar<numberofwords)
 	   {
 	     if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD, StartSectorAddress, &DATA_32[sofar]) == HAL_OK)
@@ -206,11 +215,10 @@ uint32_t Flash_Write_Data (uint32_t StartSectorAddress, uint32_t * DATA_32)
 	     }
 	     else
 	     {
-	       /* Error occurred while writing data in Flash memory*/
 	    	 return HAL_FLASH_GetError ();
 	     }
 	   }
-
+*/
 	  /* Lock the Flash to disable the flash control register access (recommended
 	     to protect the FLASH memory against possible unwanted operation) *********/
 	  HAL_FLASH_Lock();
@@ -224,7 +232,6 @@ void Flash_Read_Data (uint32_t StartSectorAddress, __IO uint32_t * DATA_32, uint
 	static uint16_t read_elements = 0;
 	while (1)
 	{
-
 		*DATA_32 = *(__IO uint32_t *)StartSectorAddress;
 		if (*DATA_32 == 0xffffffff)
 		{

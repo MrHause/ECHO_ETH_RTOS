@@ -51,7 +51,7 @@
 #define ALTITUDE_MAGIC 0xfecd05ff
 #define ALTITUDE_INIT 0x0000012c
 uint8_t SEM_NEW_MSG = 0;
-uint32_t flash_values[] = {ALTITUDE_MAGIC, ALTITUDE_INIT};
+uint32_t flash_values[9] = {ALTITUDE_MAGIC, ALTITUDE_INIT};
 __IO uint32_t RX_Data[2];
 /* USER CODE END PD */
 
@@ -364,11 +364,13 @@ MC_Status command_execute(MC_FRAME frame){
 		uint8_t buff[10];
 		memcpy(buff, frame.data, frame.dataLen);
 		int altitude = atoi(buff);
-		flash_values[1] = (uint32_t)altitude;
-		HAL_FLASHEx_Unlock_Bank1();
-		Flash_Write_Data(0x080E0000, flash_values); //write magic value and init altitude for pressure meassure
-		BME280_setAltitude(ALTITUDE_INIT);
-		HAL_FLASHEx_Lock_Bank1();
+		uint32_t to_write[9] = {0};
+		to_write[0] = ALTITUDE_MAGIC;
+		to_write[1] = (uint32_t)altitude;
+		//HAL_FLASHEx_Unlock_Bank1();
+		//Flash_Write_Data(0x080E0000, to_write); //write magic value and init altitude for pressure meassure
+		BME280_setAltitude((uint32_t)altitude);
+		//HAL_FLASHEx_Lock_Bank1();
 		MC_FRAME response;
 		memset(&response, 0, sizeof(response));
 		response.status = STAT_OK;
