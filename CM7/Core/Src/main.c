@@ -158,7 +158,7 @@ int main(void)
   HAL_FLASHEx_Lock_Bank1();
 	if (RX_Data[0] != ALTITUDE_MAGIC) { //flash not initialized
 		HAL_FLASHEx_Unlock_Bank1();
-		Flash_Write_Data(0x080E0000, flash_values); //write magic value and init altitude for pressure meassure
+		//Flash_Write_Data(0x080E0000, flash_values); //write magic value and init altitude for pressure meassure
 		BME280_setAltitude(ALTITUDE_INIT);
 		HAL_FLASHEx_Lock_Bank1();
 	} else {
@@ -281,18 +281,46 @@ void HAL_HSEM_FreeCallback(uint32_t SemMask)
 }
 MC_Status command_execute(MC_FRAME frame){
 	MC_Commands command = frame.command;
-	if( command == LED2_ON )
+	MC_FRAME resp;
+	memset(&resp, 0, sizeof(MC_FRAME));
+	if( command == LED2_ON ){
 		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 1);
-	else if( command == LED2_OFF )
+		resp.command = command;
+		resp.status = STAT_OK;
+		resp.dataLen = 0;
+		memcpy(CM7_to_CM4, &resp, sizeof(resp));
+	}
+	else if( command == LED2_OFF ){
 		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 0);
-	else if( command == LED2_TOG)
+		resp.command = command;
+		resp.status = STAT_OK;
+		resp.dataLen = 0;
+		memcpy(CM7_to_CM4, &resp, sizeof(resp));
+	} else if (command == LED2_TOG) {
 		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-	else if( command == LED3_ON )
+		resp.command = command;
+		resp.status = STAT_OK;
+		resp.dataLen = 0;
+		memcpy(CM7_to_CM4, &resp, sizeof(resp));
+	} else if (command == LED3_ON) {
 		HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 1);
-	else if( command == LED3_OFF )
+		resp.command = command;
+		resp.status = STAT_OK;
+		resp.dataLen = 0;
+		memcpy(CM7_to_CM4, &resp, sizeof(resp));
+	} else if (command == LED3_OFF) {
 		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 0);
-	else if ( command == LED3_TOG )
+		resp.command = command;
+		resp.status = STAT_OK;
+		resp.dataLen = 0;
+		memcpy(CM7_to_CM4, &resp, sizeof(resp));
+	} else if (command == LED3_TOG) {
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+		resp.command = command;
+		resp.status = STAT_OK;
+		resp.dataLen = 0;
+		memcpy(CM7_to_CM4, &resp, sizeof(resp));
+	}
 	else if ( command == GET_TEMP){
 		float temperature,humidity;
 		int32_t pressure;
@@ -367,10 +395,14 @@ MC_Status command_execute(MC_FRAME frame){
 		uint32_t to_write[9] = {0};
 		to_write[0] = ALTITUDE_MAGIC;
 		to_write[1] = (uint32_t)altitude;
-		//HAL_FLASHEx_Unlock_Bank1();
-		//Flash_Write_Data(0x080E0000, to_write); //write magic value and init altitude for pressure meassure
+		/*
+		HAL_FLASHEx_Unlock_Bank1();
+		Flash_Write_Data(0x080E0000, to_write); //write magic value and init altitude for pressure meassure
 		BME280_setAltitude((uint32_t)altitude);
-		//HAL_FLASHEx_Lock_Bank1();
+		HAL_FLASHEx_Lock_Bank1();
+		*/
+		BME280_setAltitude((uint32_t)altitude);
+
 		MC_FRAME response;
 		memset(&response, 0, sizeof(response));
 		response.status = STAT_OK;

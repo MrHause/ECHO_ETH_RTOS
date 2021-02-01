@@ -68,6 +68,7 @@ void sending_init(void);
 void sender_task(void *arg);
 
 MC_Commands command_analyze(uint8_t *buff);
+void prepare_response(MC_FRAME *resp, char *resp_buff);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void const * argument);
@@ -142,14 +143,15 @@ void StartDefaultTask(void const * argument)
   /* USER CODE BEGIN StartDefaultTask */
   mc_init();
 #ifdef TCP_SERVER_ON
-  //tcpecho_init();
+  tcpecho_init();
 #else
   sending_init();
 #endif
-
+  /*
   display_init();
   keys_init();
   menu_init();
+  */
   /* Infinite loop */
   for(;;)
   {
@@ -169,6 +171,7 @@ static void tcpecho_thread(void *arg)
   MC_Commands command;
   MC_FRAME package;
   char *response;
+  char data_resp[32] = {0};
   u16_t len;
 
   LWIP_UNUSED_ARG(arg);
@@ -202,12 +205,15 @@ static void tcpecho_thread(void *arg)
               netbuf_data(buf, &data, &len);
               uint8_t buf_check[20];
               memset(buf_check, 0, sizeof(buf_check));
+              memset(data_resp, 0, sizeof(data_resp));
               memcpy(buf_check, buf->p->payload, buf->p->len);
               //***************
               command = command_analyze(buf_check); //analyze received command
               mc_SendReceive( &package, STAT_OK, command, NULL, 0); //send command to cm7 to be executed
               response = stringFromStatus( package.status );	//make string from status enum
+              prepare_response(&package, data_resp);
               netconn_write(newconn, (void *)response, strlen(response), NETCONN_COPY); //send response
+              netconn_write(newconn, (void *)data_resp, strlen(data_resp), NETCONN_COPY); //send response
               //***************
               //netconn_write(newconn, data, len, NETCONN_COPY);
             }
@@ -246,12 +252,45 @@ MC_Commands command_analyze(uint8_t *buff){
 		command = LED3_OFF;
 	else if(!strcmp( buff, "LED3_TOG" ) )
 		command = LED3_TOG;
+	else if(!strcmp( buff, "GET_PARAMS" ) ){
+		command = GET_WEATHER_PARAM;
+	}
 	else
 		command = COMMAND_UNKNOWN;
 
 	return command;
 }
 
+void prepare_response(MC_FRAME *resp, char *resp_buff){
+	//char resp_buff[32] = {0};
+	char temp_buff[32] = {0};
+	uint16_t len;
+	switch(resp->command){
+	case GET_WEATHER_PARAM:{
+		uint16_t t1 = 0, t2 = 0;
+		memcpy(&t1, &resp->data[0], 2);
+		memcpy(&t2, &resp->data[2], 2);
+		sprintf(resp_buff, "%d.%d:", t1, t2);
+		len = strlen(resp_buff);
+		//parse humidity
+		uint16_t h1 = 0, h2 = 0;
+		memcpy(&h1, &resp->data[4], 2);
+		memcpy(&h2, &resp->data[6], 2);
+		sprintf(temp_buff, "%d.%d:", h1, h2);
+		strcpy(resp_buff+len, temp_buff);
+		len = strlen(resp_buff);
+		memset(temp_buff, 0 ,sizeof(temp_buff));
+		//parse presure
+		int32_t pressure;
+		memcpy(&pressure, &resp->data[8], sizeof(pressure));
+		sprintf(temp_buff, "%ld:", pressure);
+		strcpy(resp_buff+len, temp_buff);
+		break;
+	}
+	default:
+		break;
+	}
+}
 /*-----------------------------------------------------------------------------------*/
 
 void tcpecho_init(void)
